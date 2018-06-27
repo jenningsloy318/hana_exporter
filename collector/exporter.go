@@ -28,16 +28,16 @@ const (
 )
 
 // Tunable flags.
-var (
-	exporterLockTimeout = kingpin.Flag(
-		"exporter.lock_wait_timeout",
-		"Set a lock_wait_timeout on the connection to avoid long metadata locking.",
-	).Default("2").Int()
-	slowLogFilter = kingpin.Flag(
-		"exporter.log_slow_filter",
-		"Add a log_slow_filter to avoid slow query logging of scrapes. NOTE: Not supported by Oracle HANA.",
-	).Default("false").Bool()
-)
+//var (
+//	exporterLockTimeout = kingpin.Flag(
+//		"exporter.lock_wait_timeout",
+//		"Set a lock_wait_timeout on the connection to avoid long metadata locking.",
+//	).Default("2").Int()
+//	slowLogFilter = kingpin.Flag(
+//		"exporter.log_slow_filter",
+//		"Add a log_slow_filter to avoid slow query logging of scrapes. NOTE: Not supported by Oracle HANA.",
+//	).Default("false").Bool()
+//)
 
 // Metric descriptors.
 var (
@@ -100,7 +100,7 @@ func New(dsn string, scrapers []Scraper) *Exporter {
 			Namespace: namespace,
 			Name:      "up",
 			Help:      "Whether the HANA server is up.",
-		}),
+		},[]string{"hana_instance"}),
 	}
 }
 
@@ -173,7 +173,7 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 	isUpRows.Close()
 
 	e.hanaUp.Set(1)
-
+	hanaUp.label = 
 	ch <- prometheus.MustNewConstMetric(scrapeDurationDesc, prometheus.GaugeValue, time.Since(scrapeTime).Seconds(), "connection")
 
 	wg := &sync.WaitGroup{}
@@ -189,6 +189,7 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 				e.scrapeErrors.WithLabelValues(label).Inc()
 				e.error.Set(1)
 			}
+			log.Infoln(label)
 			ch <- prometheus.MustNewConstMetric(scrapeDurationDesc, prometheus.GaugeValue, time.Since(scrapeTime).Seconds(), label)
 		}(scraper)
 	}
