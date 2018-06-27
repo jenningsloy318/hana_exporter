@@ -141,13 +141,21 @@ func main() {
 	log.Infoln("Build context", version.BuildContext())
 
 	dsn = os.Getenv("DATA_SOURCE_NAME")
-	if len(dsn) == 0 {
+	host := os.Getenv("HANA_HOST")
+	port := int(os.Getenv("HANA_PORT"))
+	user := os.Getenv("HANA_USER")
+	password := os.Getenv("HANA_PASSWORD")
+
+
+	if len(dsn) == 0   { 
+		if len(host) != 0  && len(port) != 0 &&  len(dsn) == 0 &&  len(user) == 0 &&  len(password) == 0 {
+		dsn = fmt.Sprintf("hdb://%s:%s@%s:%d", user, password, host, port)
+		} else {
 		var err error
 		if dsn, err = parseHanacnf(*configHanacnf); err != nil {
 			log.Fatal(err)
 		}
 	}
-	fmt.Println(dsn)
 	// Register only scrapers enabled by flag.
 	log.Infof("Enabled scrapers:")
 	enabledScrapers := []collector.Scraper{}
