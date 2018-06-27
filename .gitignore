@@ -1,0 +1,10 @@
+/.build
+/hana_exporter
+/.release
+/.tarballs
+
+*.tar.gz
+*.test
+*-stamp
+.idea
+*.iml
