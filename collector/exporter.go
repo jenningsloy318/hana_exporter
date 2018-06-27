@@ -2,8 +2,7 @@ package collector
 
 import (
 	"database/sql"
-//	"fmt"
-//	"strings"
+	"strings"
 	"sync"
 	"time"
 	_ "github.com/SAP/go-hdb/driver"
@@ -21,8 +20,8 @@ const (
 // SQL Queries.
 const (
 	// System variable params formatting.
-	sessionSettingsParam = `log_slow_filter=%27tmp_table_on_disk,filesort_on_disk%27`
-	timeoutParam         = `lock_wait_timeout=%d`
+	//sessionSettingsParam = `log_slow_filter=%27tmp_table_on_disk,filesort_on_disk%27`
+//	timeoutParam         = `lock_wait_timeout=%d`
 
 	upQuery = `select to_bigint (1.1) from dummy;`
 )
@@ -141,7 +140,13 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	e.scrapeErrors.Collect(ch)
 	ch <- e.hanaUp
 }
-
+// split string, use @ as delimiter 
+func split(s rune) bool {
+	if s == '@' {
+	 return true
+	}
+	return false
+ }
 func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 	e.totalScrapes.Inc()
 	var err error
@@ -173,8 +178,9 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 	isUpRows.Close()
 
 	e.hanaUp.Set(1)
-	hanaUp.label = 
-	ch <- prometheus.MustNewConstMetric(scrapeDurationDesc, prometheus.GaugeValue, time.Since(scrapeTime).Seconds(), "connection")
+
+	 hanaUplabel :=  strings.FieldsFunc(e.dsn, split)[1]
+	ch <- prometheus.MustNewConstMetric(scrapeDurationDesc, prometheus.GaugeValue, time.Since(scrapeTime).Seconds(), hanaUplabel)
 
 	wg := &sync.WaitGroup{}
 	defer wg.Wait()
