@@ -58,21 +58,8 @@ func parseHanacnf(config interface{}) (string, error) {
 	if (host == "") || ( err != nil ) {
 		return dsn, fmt.Errorf("no host or port specified under [client] in %s", config)
 	}
-//	timeout := cfg.Section("client").Key("timeout").MustUint(10)
-//	tlsinsecureskipverify := cfg.Section("client").Key("tlsinsecureskipverify").MustBool(false)
-	dsn = fmt.Sprintf("%s:%s@%s:%d", user, password, host, port)
-// 	if ! tlsinsecureskipverify  {
-// 		dsn = fmt.Sprintf("%s:%s@%s:%d?TLSInsecureSkipVerify?timeout=%d", user, password, host, port, timeout)
-// 	}else{
-// 		tlsrootcafile := cfg.Section("client").Key("tlsrootcafile").String()
-// 		tlsservername := cfg.Section("client").Key("tlsservername").String()
-// 		if  tlsservername != "" {
-// 			dsn = fmt.Sprintf("%s:%s@%s:%d?TLSInsecureSkipVerify=%t?TLSRootCAFile=%s?TLSServerName=%s?timeout=%d", user, password, host, // port, tlsinsecureskipverify, tlsrootcafile, tlsservername, timeout)
-// 		}	else {
-// 			dsn = fmt.Sprintf("%s:%s@%s:%d?TLSInsecureSkipVerify=%t?TLSRootCAFile=%s?timeout=%d", user, password,host,port,// tlsinsecureskipverify,tlsrootcafile,timeout)
-// 		}
-// 
-// 		} 
+	dsn = fmt.Sprintf("hdb://%s:%s@%s:%d", user, password, host, port)
+
 	log.Debugln(dsn)
 	return dsn, nil
 }
