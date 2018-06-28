@@ -23,7 +23,7 @@ var upStatusRE = regexp.MustCompile(`status`)
 var (
 	upStatusDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, UPStatus, "state"),
-		"the HANA server is up",
+		"Whether the HANA server is up",
 		[]string{"hana_instance"}, nil,
 	)
 )
@@ -50,17 +50,15 @@ func (ScrapeUPStatus) Scrape(db *sql.DB, ch chan<- prometheus.Metric) error {
 	defer upStatusRows.Close()
 
 //	var key int
-	var key sql.RawBytes
+	var key int
 
 
 	for upStatusRows.Next() {
 		if err := upStatusRows.Scan(&key); err != nil {
 			return err
 		}
-		if floatVal, ok := parseStatus(key); ok { // Unparsable values are silently skipped.
 
-				ch <- prometheus.MustNewConstMetric(upStatusDesc, prometheus.GaugeValue,floatVal, Hana_instance, )
-			}
+		ch <- prometheus.MustNewConstMetric(upStatusDesc, prometheus.GaugeValue, float64(key), Hana_instance, )
 
 		}
 
