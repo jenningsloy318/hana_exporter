@@ -2,13 +2,12 @@ package collector
 
 import (
 	"database/sql"
-	"strings"
 	"sync"
 	"time"
 	_ "github.com/SAP/go-hdb/driver"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/log"
-	"gopkg.in/alecthomas/kingpin.v2"
+	"strings"
 )
 
 // Metric name parts.
@@ -17,27 +16,6 @@ const (
 	exporter = "exporter"
 )
 
-// SQL Queries.
-const (
-	// System variable params formatting.
-	//sessionSettingsParam = `log_slow_filter=%27tmp_table_on_disk,filesort_on_disk%27`
-//	timeoutParam         = `lock_wait_timeout=%d`
-
-	upQuery = `select to_bigint (1.1) from dummy;`
-)
-
-// Tunable flags.
-//var (
-//	exporterLockTimeout = kingpin.Flag(
-//		"exporter.lock_wait_timeout",
-//		"Set a lock_wait_timeout on the connection to avoid long metadata locking.",
-//	).Default("2").Int()
-//	slowLogFilter = kingpin.Flag(
-//		"exporter.log_slow_filter",
-//		"Add a log_slow_filter to avoid slow query logging of scrapes. NOTE: Not supported by Oracle HANA.",
-//	).Default("false").Bool()
-//)
-
 // Metric descriptors.
 var (
 	scrapeDurationDesc = prometheus.NewDesc(
@@ -45,6 +23,7 @@ var (
 		"Collector time duration.",
 		[]string{"collector"}, nil,
 	)
+	 Hana_instance string
 )
 
 // Exporter collects HANA metrics. It implements prometheus.Collector.
@@ -54,25 +33,19 @@ type Exporter struct {
 	error        prometheus.Gauge
 	totalScrapes prometheus.Counter
 	scrapeErrors *prometheus.CounterVec
-	hanaUp     prometheus.Gauge
 }
+
+func stringsplit(s rune) bool {
+	if s == '@' {
+	 return true
+	}
+	return false
+ }
+
 
 // New returns a new HANA exporter for the provided DSN.
 func New(dsn string, scrapers []Scraper) *Exporter {
-	// Setup extra params for the DSN, default to having a lock timeout.
-	
-	//dsnParams := []string{fmt.Sprintf(timeoutParam, *exporterLockTimeout)}
 
-//	if *slowLogFilter {
-//		dsnParams = append(dsnParams, sessionSettingsParam)
-//	}
-
-//	if strings.Contains(dsn, "?") {
-//		dsn = dsn + "&"
-//	} else {
-//		dsn = dsn + "?"
-//	}
-//	dsn += strings.Join(dsnParams, "&")
 
 	return &Exporter{
 		dsn:      dsn,
@@ -95,11 +68,6 @@ func New(dsn string, scrapers []Scraper) *Exporter {
 			Name:      "last_scrape_error",
 			Help:      "Whether the last scrape of metrics from HANA resulted in an error (1 for error, 0 for success).",
 		}),
-		hanaUp: prometheus.NewGauge(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Name:      "up",
-			Help:      "Whether the HANA server is up.",
-		},[]string{"hana_instance"}),
 	}
 }
 
@@ -138,22 +106,13 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	ch <- e.totalScrapes
 	ch <- e.error
 	e.scrapeErrors.Collect(ch)
-	ch <- e.hanaUp
 }
-// split string, use @ as delimiter 
-func split(s rune) bool {
-	if s == '@' {
-	 return true
-	}
-	return false
- }
+
 func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 	e.totalScrapes.Inc()
 	var err error
 
-	scrapeTime := time.Now()
 	db, err := sql.Open("hdb", e.dsn)
-	log.Infoln(db)
 	if err != nil {
 		log.Errorln("Error opening connection to database:", err)
 		e.error.Set(1)
@@ -167,20 +126,8 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 	// Set max lifetime for a connection.
 	db.SetConnMaxLifetime(1 * time.Minute)
 
-	isUpRows, err := db.Query(upQuery)
-	log.Infoln(isUpRows)
-	if err != nil {
-		log.Errorln("Error pinging hana:", err)
-		e.hanaUp.Set(0)
-		e.error.Set(1)
-		return
-	}
-	isUpRows.Close()
 
-	e.hanaUp.Set(1)
-
-	 hanaUplabel :=  strings.FieldsFunc(e.dsn, split)[1]
-	ch <- prometheus.MustNewConstMetric(scrapeDurationDesc, prometheus.GaugeValue, time.Since(scrapeTime).Seconds(), hanaUplabel)
+	Hana_instance =  strings.FieldsFunc(e.dsn, stringsplit)[1]
 
 	wg := &sync.WaitGroup{}
 	defer wg.Wait()
@@ -195,7 +142,6 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 				e.scrapeErrors.WithLabelValues(label).Inc()
 				e.error.Set(1)
 			}
-			log.Infoln(label)
 			ch <- prometheus.MustNewConstMetric(scrapeDurationDesc, prometheus.GaugeValue, time.Since(scrapeTime).Seconds(), label)
 		}(scraper)
 	}
