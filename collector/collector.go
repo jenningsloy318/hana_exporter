@@ -1,11 +1,7 @@
 package collector
 
 import (
-	"bytes"
-	"database/sql"
 	"regexp"
-	"strconv"
-
 	"github.com/prometheus/client_golang/prometheus"
 )
 

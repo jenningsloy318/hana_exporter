@@ -40,8 +40,9 @@ func split(s rune) bool {
  }
 // scrapers lists all possible collection methods and if they should be enabled by default.
 var scrapers = map[collector.Scraper]bool{
-	collector.ScrapeGlobalStatus{}: false ,
 	collector.ScrapeUPStatus{}: true ,
+	collector.ScrapeHostServiceMemory{}: true ,
+
 
 }
 
