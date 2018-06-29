@@ -15,7 +15,10 @@ const (
 	// Subsystem(s).
 	exporter = "exporter"
 )
-
+// SQL Queries.
+const (	
+		upQuery = `select 1 from dummy;`
+	)
 // Metric descriptors.
 var (
 	scrapeDurationDesc = prometheus.NewDesc(
@@ -33,6 +36,7 @@ type Exporter struct {
 	error        prometheus.Gauge
 	totalScrapes prometheus.Counter
 	scrapeErrors *prometheus.CounterVec
+	hanaUp     prometheus.Gauge
 }
 
 func stringsplit(s rune) bool {
@@ -45,7 +49,7 @@ func stringsplit(s rune) bool {
 
 // New returns a new HANA exporter for the provided DSN.
 func New(dsn string, scrapers []Scraper) *Exporter {
-
+	Hana_instance =  strings.FieldsFunc(dsn, stringsplit)[1]
 
 	return &Exporter{
 		dsn:      dsn,
@@ -68,6 +72,13 @@ func New(dsn string, scrapers []Scraper) *Exporter {
 			Name:      "last_scrape_error",
 			Help:      "Whether the last scrape of metrics from HANA resulted in an error (1 for error, 0 for success).",
 		}),
+		
+	hanaUp: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "up",
+			Help:      "Whether the HANA server is up.",
+			ConstLabels: prometheus.Labels{"hana_instance": Hana_instance},
+			}),
 	}
 }
 
@@ -101,17 +112,19 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect implements prometheus.Collector.
 func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
+
 	e.scrape(ch)
 
 	ch <- e.totalScrapes
 	ch <- e.error
+	ch <- e.hanaUp
 	e.scrapeErrors.Collect(ch)
 }
 
 func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 	e.totalScrapes.Inc()
 	var err error
-
+  scrapeTime := time.Now()
 	db, err := sql.Open("hdb", e.dsn)
 	if err != nil {
 		log.Errorln("Error opening connection to database:", err)
@@ -126,8 +139,17 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 	// Set max lifetime for a connection.
 	db.SetConnMaxLifetime(1 * time.Minute)
 
-
-	Hana_instance =  strings.FieldsFunc(e.dsn, stringsplit)[1]
+		isUpRows, err := db.Query(upQuery)
+		if err != nil {
+			log.Errorln("Error pinging hana:", err)
+			e.hanaUp.Set(0)
+			e.error.Set(1)
+			return
+		}
+		isUpRows.Close()
+	
+		e.hanaUp.Set(1)
+	 ch <- prometheus.MustNewConstMetric(scrapeDurationDesc, prometheus.GaugeValue, time.Since(scrapeTime).Seconds(), "connection") 
 
 	wg := &sync.WaitGroup{}
 	defer wg.Wait()
