@@ -24,7 +24,7 @@ var (
 	hostServiceMemoryDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, hostServiceMemory, "total_memory_used_size"),
 		"Total  memory used size by HANA service Byte .",
-		[]string{"service_name"}, nil,
+		[]string{"service_name","hana_instance"}, nil,
 	)
 )
 
@@ -57,7 +57,7 @@ func (ScrapeHostServiceMemory) Scrape(db *sql.DB, ch chan<- prometheus.Metric) e
 			return err
 		}
 
-		ch <- prometheus.MustNewConstMetric(hostServiceMemoryDesc, prometheus.GaugeValue, val, key,)
+		ch <- prometheus.MustNewConstMetric(hostServiceMemoryDesc, prometheus.GaugeValue, val, key,Hana_instance)
 
 			}
 			return nil
