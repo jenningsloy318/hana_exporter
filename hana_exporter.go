@@ -31,16 +31,9 @@ var (
 	).Default(path.Join(os.Getenv("HOME"), ".hana/hana.cnf")).String()
 	dsn string
 )
-// split string, use @ as delimiter 
-func split(s rune) bool {
-	if s == '@' {
-	 return true
-	}
-	return false
- }
+
 // scrapers lists all possible collection methods and if they should be enabled by default.
 var scrapers = map[collector.Scraper]bool{
-	collector.ScrapeUPStatus{}: true ,
 	collector.ScrapeHostServiceMemory{}: true ,
 
 

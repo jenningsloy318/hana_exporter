@@ -38,6 +38,7 @@ type Exporter struct {
 	scrapeErrors *prometheus.CounterVec
 	hanaUp     prometheus.Gauge
 }
+// split string, use @ as delimiter to split the dsn to get hana instance
 
 func stringsplit(s rune) bool {
 	if s == '@' {
