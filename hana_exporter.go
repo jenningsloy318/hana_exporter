@@ -36,6 +36,7 @@ var (
 var scrapers = map[collector.Scraper]bool{
 	collector.ScrapeHostServiceMemory{}: true ,
 	collector.ScrapeHostServiceStatistics{}: true ,
+	collector.ScrapeHostResourceUtilization{}: true,
 
 
 }
