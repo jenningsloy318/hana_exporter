@@ -48,15 +48,15 @@ func (ScrapeHostServiceMemory) Scrape(db *sql.DB, ch chan<- prometheus.Metric) e
 	}
 	defer hostServiceMemoryRows.Close()
 
-	var key string
-	var val float64
+	var service_name string 
+	var total_memory_used_size float64
 
 	for hostServiceMemoryRows.Next() {
-		if err := hostServiceMemoryRows.Scan(&key, &val); err != nil {
+		if err := hostServiceMemoryRows.Scan(&service_name, &total_memory_used_size); err != nil {
 			return err
 		}
 
-		ch <- prometheus.MustNewConstMetric(hostServiceMemoryDesc, prometheus.GaugeValue, val, key,Hana_instance)
+		ch <- prometheus.MustNewConstMetric(hostServiceMemoryDesc, prometheus.GaugeValue, total_memory_used_size, service_name,Hana_instance)
 
 			}
 			return nil
