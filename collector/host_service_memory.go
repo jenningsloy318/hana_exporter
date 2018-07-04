@@ -11,8 +11,7 @@ import (
 
 const (
 	// Scrape query.
-	hostServiceMemoryQuery = `select service_name,total_memory_used_size from "_SYS_STATISTICS"."HOST_SERVICE_MEMORY" where snapshot_id in (select distinct max(snapshot_id) as snapshot_id from "_SYS_STATISTICS"."HOST_SERVICE_MEMORY") 
-	`
+	hostServiceMemoryQuery = `select service_name,total_memory_used_size from "_SYS_STATISTICS"."HOST_SERVICE_MEMORY" where snapshot_id in (select distinct max(snapshot_id) as snapshot_id from "_SYS_STATISTICS"."HOST_SERVICE_MEMORY") 	`
 	// Subsystem.
 	hostServiceMemory = "host_service_memory"
 )
@@ -23,7 +22,7 @@ const (
 var (
 	hostServiceMemoryDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, hostServiceMemory, "total_memory_used_size"),
-		"Total  memory used size by HANA service Byte .",
+		"Service memory usage.",
 		[]string{"service_name","hana_instance"}, nil,
 	)
 )
