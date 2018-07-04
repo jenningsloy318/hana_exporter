@@ -22,12 +22,12 @@ const (
 // Metric descriptors.
 var (
 	hostResourceUtilizationUsedPhysicalMemorydesc = prometheus.NewDesc(
-		prometheus.BuildFQName(namespace, hostResourceUtilization, "used_physical_memory"),
-		"Used physical memory on the host from sys.m_host_resource_utilization.",
+		prometheus.BuildFQName(namespace, hostResourceUtilization, "used_physical_memory_bytes"),
+		"Used physical memory on the host (bytes) from sys.m_host_resource_utilization.",
 		[]string{"hana_instance","host"}, nil,)
 	hostResourceUtilizationFreePhysicalMemorydesc = prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, hostResourceUtilization, "free_physical_memory"),
-			"Free physical memory on the host from sys.m_host_resource_utilization.",
+			prometheus.BuildFQName(namespace, hostResourceUtilization, "free_physical_memory_bytes"),
+			"Free physical memory on the host(bytes) from sys.m_host_resource_utilization.",
 			[]string{"hana_instance","host"}, nil,)		
 )
 

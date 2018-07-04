@@ -22,12 +22,12 @@ const (
 // Metric descriptors.
 var (
 	serviceStatisticsActiveStatusDesc = prometheus.NewDesc(
-		prometheus.BuildFQName(namespace, serviceStatistics, "active_status"),
+		prometheus.BuildFQName(namespace, serviceStatistics, "status"),
 		"Service Active Status from sys.m_service_statistics.",
 		[]string{"hana_instance","service_name","host","port"}, nil,)
 	serviceStatisticsDurationDesc = prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, serviceStatistics, "service_status_duration"),
-			"Current service status duration from sys.m_service_statistics.",
+			prometheus.BuildFQName(namespace, serviceStatistics, "status_duration_seconds"),
+			"Current service status duration (seconds) from sys.m_service_statistics.",
 			[]string{"hana_instance","service_name","service_status","host","port"}, nil,)		
 )
 
