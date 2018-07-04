@@ -169,3 +169,16 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 		}(scraper)
 	}
 }
+
+
+
+
+func parseStatus(data sql.RawBytes) (float64, bool) {
+	if bytes.Compare(data, []byte("YES")) == 0  {
+		return 1, true
+	}
+	if bytes.Compare(data, []byte("NO")) == 0 || bytes.Compare(data, []byte("UNKNOWN")) || bytes.Compare(data, []byte("STARTING")) || bytes.Compare(data, []byte("STOPPING"))== 0{
+		return 0, true
+	}
+}
+

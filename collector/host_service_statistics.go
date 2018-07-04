@@ -113,7 +113,7 @@ func (ScrapeHostServiceStatistics) Scrape(db *sql.DB, ch chan<- prometheus.Metri
 	defer hostServiceStatisticsRows.Close()
 
 	var service_name  string 
-	var active_status  float64
+	var active_status  string
 	var active_request_count  float64
 	var pending_request_count  float64
 	var all_finished_request_count  float64
@@ -135,8 +135,9 @@ func (ScrapeHostServiceStatistics) Scrape(db *sql.DB, ch chan<- prometheus.Metri
 		if err := hostServiceStatisticsRows.Scan(&service_name,&active_status,&active_request_count,&pending_request_count,&all_finished_request_count,&all_finished_request_count_delta,&finished_non_internal_request_count,&finished_non_internal_request_count_delta,&requests_per_sec,&response_time,&process_id,&active_thread_count,&thread_count,&process_cpu_time,&total_cpu_time,&process_physical_memory,&process_memory,&physical_memory); err != nil {
 			return err
 		}
-
-		ch <- prometheus.MustNewConstMetric(hostServiceStatisticsActiveStatusDesc, prometheus.GaugeValue, active_status, service_name,Hana_instance)
+		if active_statusVal, ok := parseStatus(active_status); ok { 
+			ch <- prometheus.MustNewConstMetric(hostServiceStatisticsActiveStatusDesc, prometheus.GaugeValue, active_statusVal, service_name,Hana_instance)
+		}
 		ch <- prometheus.MustNewConstMetric(hostServiceStatisticsActiveRequestCountDesc, prometheus.GaugeValue, active_request_count, service_name,Hana_instance)
 		ch <- prometheus.MustNewConstMetric(hostServiceStatisticsPendingRequestCountDesc, prometheus.GaugeValue, pending_request_count, service_name,Hana_instance)
 		ch <- prometheus.MustNewConstMetric(hostServiceStatisticsAllFinishedRequestCountDesc, prometheus.GaugeValue, all_finished_request_count, service_name,Hana_instance)
