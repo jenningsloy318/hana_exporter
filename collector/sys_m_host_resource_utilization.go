@@ -23,11 +23,11 @@ const (
 var (
 	hostResourceUtilizationUsedPhysicalMemorydesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, hostResourceUtilization, "used_physical_memory"),
-		"Used physical memory on the host.",
+		"Used physical memory on the host from sys.m_host_resource_utilization.",
 		[]string{"hana_instance","host"}, nil,)
 	hostResourceUtilizationFreePhysicalMemorydesc = prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, hostResourceUtilization, "free_physical_memory"),
-			"Free physical memory on the host.",
+			"Free physical memory on the host from sys.m_host_resource_utilization.",
 			[]string{"hana_instance","host"}, nil,)		
 )
 

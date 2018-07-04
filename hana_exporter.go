@@ -34,8 +34,6 @@ var (
 
 // scrapers lists all possible collection methods and if they should be enabled by default.
 var scrapers = map[collector.Scraper]bool{
-	collector.ScrapeHostServiceMemory{}: true ,
-	collector.ScrapeHostServiceStatistics{}: true ,
 	collector.ScrapeHostResourceUtilization{}: true,
 	collector.ScrapeServiceStatistics{}: true,
 
