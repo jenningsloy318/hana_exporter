@@ -11,7 +11,7 @@ import (
 
 const (
 	// Scrape query.
-	hostResourceUtilizationQuery = ` select USED_PHYSICAL_MEMORY,FREE_PHYSICAL_MEMORY from SYS.M_HOST_RESOURCE_UTILIZATION
+	hostResourceUtilizationQuery = ` select HOST,USED_PHYSICAL_MEMORY,FREE_PHYSICAL_MEMORY from SYS.M_HOST_RESOURCE_UTILIZATION
 	`
 	// Subsystem.
 	hostResourceUtilization = "sys_m_host_resource_utilization"
@@ -24,11 +24,11 @@ var (
 	hostResourceUtilizationUsedPhysicalMemorydesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, hostResourceUtilization, "used_physical_memory"),
 		"Used physical memory on the host.",
-		[]string{"hana_instance"}, nil,)
+		[]string{"hana_instance","host"}, nil,)
 	hostResourceUtilizationFreePhysicalMemorydesc = prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, hostResourceUtilization, "free_physical_memory"),
 			"Free physical memory on the host.",
-			[]string{"hana_instance"}, nil,)		
+			[]string{"hana_instance","host"}, nil,)		
 )
 
 // ScrapeHostResourceUtilization collects from `SYS.M_HOST_RESOURCE_UTILIZATION`.
@@ -54,14 +54,14 @@ func (ScrapeHostResourceUtilization) Scrape(db *sql.DB, ch chan<- prometheus.Met
 
 	var used_physical_memory float64 
 	var free_physical_memory float64
-
+  var host string
 	for hostResourceUtilizationRows.Next() {
-		if err := hostResourceUtilizationRows.Scan(&used_physical_memory, &free_physical_memory); err != nil {
+		if err := hostResourceUtilizationRows.Scan(&host,&used_physical_memory, &free_physical_memory); err != nil {
 			return err
 		}
 
-		ch <- prometheus.MustNewConstMetric(hostResourceUtilizationUsedPhysicalMemorydesc, prometheus.GaugeValue, used_physical_memory,Hana_instance)
-		ch <- prometheus.MustNewConstMetric(hostResourceUtilizationFreePhysicalMemorydesc, prometheus.GaugeValue, free_physical_memory,Hana_instance)
+		ch <- prometheus.MustNewConstMetric(hostResourceUtilizationUsedPhysicalMemorydesc, prometheus.GaugeValue, used_physical_memory,Hana_instance,host)
+		ch <- prometheus.MustNewConstMetric(hostResourceUtilizationFreePhysicalMemorydesc, prometheus.GaugeValue, free_physical_memory,Hana_instance,host)
 
 			}
 			return nil

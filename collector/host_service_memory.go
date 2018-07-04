@@ -11,7 +11,7 @@ import (
 
 const (
 	// Scrape query.
-	hostServiceMemoryQuery = `select service_name,total_memory_used_size from "_SYS_STATISTICS"."HOST_SERVICE_MEMORY" where snapshot_id in (select distinct max(snapshot_id) as snapshot_id from "_SYS_STATISTICS"."HOST_SERVICE_MEMORY") 	`
+	hostServiceMemoryQuery = `select host,port,service_name,total_memory_used_size from "_SYS_STATISTICS"."HOST_SERVICE_MEMORY" where snapshot_id in (select distinct max(snapshot_id) as snapshot_id from "_SYS_STATISTICS"."HOST_SERVICE_MEMORY") 	`
 	// Subsystem.
 	hostServiceMemory = "host_service_memory"
 )
@@ -23,7 +23,7 @@ var (
 	hostServiceMemoryDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, hostServiceMemory, "total_memory_used_size"),
 		"Service memory usage.",
-		[]string{"service_name","hana_instance"}, nil,
+		[]string{"service_name","hana_instance","host","port"}, nil,
 	)
 )
 
@@ -50,13 +50,14 @@ func (ScrapeHostServiceMemory) Scrape(db *sql.DB, ch chan<- prometheus.Metric) e
 
 	var service_name string 
 	var total_memory_used_size float64
-
+	var host string
+	var port string 
 	for hostServiceMemoryRows.Next() {
-		if err := hostServiceMemoryRows.Scan(&service_name, &total_memory_used_size); err != nil {
+		if err := hostServiceMemoryRows.Scan(&host, &port, &service_name, &total_memory_used_size); err != nil {
 			return err
 		}
 
-		ch <- prometheus.MustNewConstMetric(hostServiceMemoryDesc, prometheus.GaugeValue, total_memory_used_size, service_name,Hana_instance)
+		ch <- prometheus.MustNewConstMetric(hostServiceMemoryDesc, prometheus.GaugeValue, total_memory_used_size, service_name,Hana_instance,host, port)
 
 			}
 			return nil
