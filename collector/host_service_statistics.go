@@ -113,7 +113,7 @@ func (ScrapeHostServiceStatistics) Scrape(db *sql.DB, ch chan<- prometheus.Metri
 	defer hostServiceStatisticsRows.Close()
 
 	var service_name  string 
-	var active_status  string
+	var active_status  sql.RawBytes
 	var active_request_count  float64
 	var pending_request_count  float64
 	var all_finished_request_count  float64
