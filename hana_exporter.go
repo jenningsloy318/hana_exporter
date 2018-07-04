@@ -20,7 +20,7 @@ var (
 	listenAddress = kingpin.Flag(
 		"web.listen-address",
 		"Address to listen on for web interface and telemetry.",
-	).Default(":9105").String()
+	).Default(":9460").String()
 	metricPath = kingpin.Flag(
 		"web.telemetry-path",
 		"Path under which to expose metrics.",
