@@ -31,6 +31,7 @@ FIRST_GOPATH := $(firstword $(subst :, ,$(shell $(GO) env GOPATH)))
 PROMU        := $(FIRST_GOPATH)/bin/promu
 STATICCHECK  := $(FIRST_GOPATH)/bin/staticcheck
 GOVENDOR     := $(FIRST_GOPATH)/bin/govendor
+GODEP				 := $(FIRST_GOPATH)/bin/dep
 pkgs          = ./...
 
 PREFIX                  ?= $(shell pwd)
@@ -76,6 +77,10 @@ unused: $(GOVENDOR)
 	@echo ">> running check for unused packages"
 	@$(GOVENDOR) list +unused | grep . && exit 1 || echo 'No unused packages'
 
+deps:
+	$(GO) get -u github.com/golang/dep/cmd/dep
+	$(GODEP) ensure
+
 build: promu
 	@echo ">> building binaries"
 	$(PROMU) build --prefix $(PREFIX)
@@ -93,4 +98,4 @@ $(FIRST_GOPATH)/bin/staticcheck:
 $(FIRST_GOPATH)/bin/govendor:
 	GOOS= GOARCH= $(GO) get -u github.com/kardianos/govendor
 
-.PHONY: all style check_license format build test vet assets tarball  promu staticcheck $(FIRST_GOPATH)/bin/staticcheck govendor $(FIRST_GOPATH)/bin/govendor
+.PHONY: all style check_license format build test vet assets tarball  promu staticcheck $(FIRST_GOPATH)/bin/staticcheck govendor $(FIRST_GOPATH)/bin/govendor 
