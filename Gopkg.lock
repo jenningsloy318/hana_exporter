@@ -83,7 +83,7 @@
     "nfs",
     "xfs"
   ]
-  revision = "7d6f385de8bea29190f15ba9931442a0eaef9af7"
+  revision = "40f013a808ec4fa79def444a1a56de4d1727efcb"
 
 [[projects]]
   name = "github.com/sirupsen/logrus"
@@ -106,7 +106,7 @@
     "windows/registry",
     "windows/svc/eventlog"
   ]
-  revision = "c4afb3effaa53fd9a06ca61262dc7ce8df4c081b"
+  revision = "151529c776cdc58ddbe7963ba9af779f3577b419"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -121,14 +121,14 @@
   version = "v2.2.6"
 
 [[projects]]
-  name = "gopkg.in/ini.v1"
+  name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "06f5f3d67269ccec1fe5fe4134ba6e982984f7f5"
-  version = "v1.37.0"
+  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
+  version = "v2.2.1"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a7d8dd09737f668e50a6fe225237ed64d8260402c6e22d36e0c4fec5f63303e4"
+  inputs-digest = "daa73a4d47820dd76a1e2e53d34b77f484940f7c38194e72a44900f4affdaa05"
   solver-name = "gps-cdcl"
   solver-version = 1
