@@ -2,7 +2,7 @@
 /hana_exporter
 /.release
 /.tarballs
-
+vendor
 *.tar.gz
 *.test
 *-stamp

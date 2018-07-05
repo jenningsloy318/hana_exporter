@@ -78,8 +78,9 @@ unused: $(GOVENDOR)
 	@$(GOVENDOR) list +unused | grep . && exit 1 || echo 'No unused packages'
 
 deps:
+  @echo ">> update the dependencies"
 	$(GO) get -u github.com/golang/dep/cmd/dep
-	$(GODEP) ensure
+	$(GODEP) ensure -update
 
 build: promu
 	@echo ">> building binaries"
@@ -98,4 +99,4 @@ $(FIRST_GOPATH)/bin/staticcheck:
 $(FIRST_GOPATH)/bin/govendor:
 	GOOS= GOARCH= $(GO) get -u github.com/kardianos/govendor
 
-.PHONY: all style check_license format build test vet assets tarball  promu staticcheck $(FIRST_GOPATH)/bin/staticcheck govendor $(FIRST_GOPATH)/bin/govendor 
+.PHONY: all style check_license format build test vet assets tarball  promu staticcheck $(FIRST_GOPATH)/bin/staticcheck govendor $(FIRST_GOPATH)/bin/govendor dep $(FIRST_GOPATH)/bin/dep
