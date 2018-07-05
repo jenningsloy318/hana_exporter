@@ -1,15 +1,15 @@
 package collector
 
 import (
+	"bytes"
 	"database/sql"
-	"sync"
-	"time"
 	_ "github.com/SAP/go-hdb/driver"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/log"
-	"strings"
-	"bytes"
 	"strconv"
+	"strings"
+	"sync"
+	"time"
 )
 
 // Metric name parts.
@@ -17,10 +17,12 @@ const (
 	// Subsystem(s).
 	exporter = "exporter"
 )
+
 // SQL Queries.
-const (	
-		upQuery = `select 1 from dummy;`
-	)
+const (
+	upQuery = `select 1 from dummy;`
+)
+
 // Metric descriptors.
 var (
 	scrapeDurationDesc = prometheus.NewDesc(
@@ -28,7 +30,7 @@ var (
 		"Collector time duration.",
 		[]string{"collector"}, nil,
 	)
-	 Hana_instance string
+	Hana_instance string
 )
 
 // Exporter collects HANA metrics. It implements prometheus.Collector.
@@ -38,21 +40,21 @@ type Exporter struct {
 	error        prometheus.Gauge
 	totalScrapes prometheus.Counter
 	scrapeErrors *prometheus.CounterVec
-	hanaUp     prometheus.Gauge
+	hanaUp       prometheus.Gauge
 }
+
 // split string, use @ as delimiter to split the dsn to get hana instance
 
 func stringsplit(s rune) bool {
 	if s == '@' {
-	 return true
+		return true
 	}
 	return false
- }
-
+}
 
 // New returns a new HANA exporter for the provided DSN.
 func New(dsn string, scrapers []Scraper) *Exporter {
-	Hana_instance =  strings.FieldsFunc(dsn, stringsplit)[1]
+	Hana_instance = strings.FieldsFunc(dsn, stringsplit)[1]
 
 	return &Exporter{
 		dsn:      dsn,
@@ -75,13 +77,13 @@ func New(dsn string, scrapers []Scraper) *Exporter {
 			Name:      "last_scrape_error",
 			Help:      "Whether the last scrape of metrics from HANA resulted in an error (1 for error, 0 for success).",
 		}),
-		
-	hanaUp: prometheus.NewGauge(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Name:      "up",
-			Help:      "Whether the HANA server is up.",
+
+		hanaUp: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace:   namespace,
+			Name:        "up",
+			Help:        "Whether the HANA server is up.",
 			ConstLabels: prometheus.Labels{"hana_instance": Hana_instance},
-			}),
+		}),
 	}
 }
 
@@ -127,7 +129,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 	e.totalScrapes.Inc()
 	var err error
-  scrapeTime := time.Now()
+	scrapeTime := time.Now()
 	db, err := sql.Open("hdb", e.dsn)
 	if err != nil {
 		log.Errorln("Error opening connection to database:", err)
@@ -142,17 +144,17 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 	// Set max lifetime for a connection.
 	db.SetConnMaxLifetime(1 * time.Minute)
 
-		isUpRows, err := db.Query(upQuery)
-		if err != nil {
-			log.Errorln("Error pinging hana:", err)
-			e.hanaUp.Set(0)
-			e.error.Set(1)
-			return
-		}
-		isUpRows.Close()
-	
-		e.hanaUp.Set(1)
-	 ch <- prometheus.MustNewConstMetric(scrapeDurationDesc, prometheus.GaugeValue, time.Since(scrapeTime).Seconds(), "connection") 
+	isUpRows, err := db.Query(upQuery)
+	if err != nil {
+		log.Errorln("Error pinging hana:", err)
+		e.hanaUp.Set(0)
+		e.error.Set(1)
+		return
+	}
+	isUpRows.Close()
+
+	e.hanaUp.Set(1)
+	ch <- prometheus.MustNewConstMetric(scrapeDurationDesc, prometheus.GaugeValue, time.Since(scrapeTime).Seconds(), "connection")
 
 	wg := &sync.WaitGroup{}
 	defer wg.Wait()
@@ -172,18 +174,14 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 	}
 }
 
-
-
-
 func parseStatus(data sql.RawBytes) (float64, bool) {
-	if bytes.Compare(data, []byte("YES")) == 0  {
+	if bytes.Compare(data, []byte("YES")) == 0 {
 		return 1, true
 	}
-	if bytes.Compare(data, []byte("NO")) == 0  || bytes.Compare(data, []byte("UNKNOWN")) ==0 || bytes.Compare(data, []byte("STARTING")) ==0 || bytes.Compare(data, []byte("STOPPING"))== 0 {
+	if bytes.Compare(data, []byte("NO")) == 0 || bytes.Compare(data, []byte("UNKNOWN")) == 0 || bytes.Compare(data, []byte("STARTING")) == 0 || bytes.Compare(data, []byte("STOPPING")) == 0 {
 		return 0, true
 	}
 	value, err := strconv.ParseFloat(string(data), 64)
 	return value, err == nil
 
 }
-

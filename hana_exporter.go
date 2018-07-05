@@ -2,15 +2,15 @@ package main
 
 import (
 	"fmt"
-	"net/http"
-	"os"
-	"path"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/log"
 	"github.com/prometheus/common/version"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"gopkg.in/ini.v1"
+	"net/http"
+	"os"
+	"path"
 
 	"github.com/jenningsloy318/hana_exporter/collector"
 )
@@ -35,10 +35,8 @@ var (
 // scrapers lists all possible collection methods and if they should be enabled by default.
 var scrapers = map[collector.Scraper]bool{
 	collector.ScrapeHostResourceUtilization{}: true,
-	collector.ScrapeServiceStatistics{}: true,
-	collector.ScrapeLicenseStatus{}: true,
-
-
+	collector.ScrapeServiceStatistics{}:       true,
+	collector.ScrapeLicenseStatus{}:           true,
 }
 
 func parseHanacnf(config interface{}) (string, error) {
@@ -57,8 +55,8 @@ func parseHanacnf(config interface{}) (string, error) {
 		return dsn, fmt.Errorf("no user or password specified under [client] in %s", config)
 	}
 	host := cfg.Section("client").Key("host").String()
-	port,err := cfg.Section("client").Key("port").Uint()
-	if (host == "") || ( err != nil ) {
+	port, err := cfg.Section("client").Key("port").Uint()
+	if (host == "") || (err != nil) {
 		return dsn, fmt.Errorf("no host or port specified under [client] in %s", config)
 	}
 	dsn = fmt.Sprintf("hdb://%s:%s@%s:%d", user, password, host, port)
@@ -146,18 +144,18 @@ func main() {
 	port := os.Getenv("HANA_PORT")
 	user := os.Getenv("HANA_USER")
 	password := os.Getenv("HANA_PASSWORD")
-	
-	// construct dsn from env or from conf file 
-	if len(dsn) == 0   { 
-		if len(host) != 0  && len(port) != 0  &&  len(user) != 0 &&  len(password) != 0 {
-		dsn = fmt.Sprintf("hdb://%s:%s@%s:%s", user, password, host, port)
+
+	// construct dsn from env or from conf file
+	if len(dsn) == 0 {
+		if len(host) != 0 && len(port) != 0 && len(user) != 0 && len(password) != 0 {
+			dsn = fmt.Sprintf("hdb://%s:%s@%s:%s", user, password, host, port)
 		} else {
-		var err error
-		if dsn, err = parseHanacnf(*configHanacnf); err != nil {
-			log.Fatal(err)
+			var err error
+			if dsn, err = parseHanacnf(*configHanacnf); err != nil {
+				log.Fatal(err)
+			}
 		}
 	}
-}
 	// Register only scrapers enabled by flag.
 	log.Infof("Enabled scrapers:")
 	enabledScrapers := []collector.Scraper{}
@@ -175,4 +173,3 @@ func main() {
 	log.Infoln("Listening on", *listenAddress)
 	log.Fatal(http.ListenAndServe(*listenAddress, nil))
 }
-

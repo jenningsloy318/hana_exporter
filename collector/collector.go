@@ -1,8 +1,8 @@
 package collector
 
 import (
-	"regexp"
 	"github.com/prometheus/client_golang/prometheus"
+	"regexp"
 )
 
 const (
@@ -10,7 +10,6 @@ const (
 	namespace = "hana"
 	// Math constant for picoseconds to seconds.
 	picoSeconds = 1e12
-
 )
 
 var logRE = regexp.MustCompile(`.+\.(\d+)$`)

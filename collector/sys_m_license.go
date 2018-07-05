@@ -7,7 +7,6 @@ import (
 	_ "github.com/SAP/go-hdb/driver"
 
 	"github.com/prometheus/client_golang/prometheus"
-
 )
 
 const (
@@ -17,15 +16,12 @@ const (
 	licenseStatus = "sys_m_license"
 )
 
-
-
 // Metric descriptors.
 var (
 	licenseStatusDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, licenseStatus, "expire_days"),
 		"License expire days from sys.m_service_statistics.",
-		[]string{"hana_instance","hardware_key","system_id","product_limit"}, nil,)
-		
+		[]string{"hana_instance", "hardware_key", "system_id", "product_limit"}, nil)
 )
 
 // ScrapeserviceStatistics collects from `sys.m_service_statistics`.
@@ -48,23 +44,20 @@ func (ScrapeLicenseStatus) Scrape(db *sql.DB, ch chan<- prometheus.Metric) error
 		return err
 	}
 	defer licenseStatusRows.Close()
-	
-	var hardware_key string
-	var system_id string 
-	var product_limit string 
-  var expire_days float64 
 
+	var hardware_key string
+	var system_id string
+	var product_limit string
+	var expire_days float64
 
 	for licenseStatusRows.Next() {
 		if err := licenseStatusRows.Scan(&hardware_key, &system_id, &product_limit, &expire_days); err != nil {
 			return err
 		}
 
-		ch <- prometheus.MustNewConstMetric(licenseStatusDesc, prometheus.GaugeValue, expire_days,Hana_instance,hardware_key,system_id,product_limit)
-
-			}
-			return nil
+		ch <- prometheus.MustNewConstMetric(licenseStatusDesc, prometheus.GaugeValue, expire_days, Hana_instance, hardware_key, system_id, product_limit)
 
 	}
+	return nil
 
-
+}

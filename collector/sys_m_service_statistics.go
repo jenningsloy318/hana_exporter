@@ -7,7 +7,6 @@ import (
 	_ "github.com/SAP/go-hdb/driver"
 
 	"github.com/prometheus/client_golang/prometheus"
-
 )
 
 const (
@@ -17,18 +16,16 @@ const (
 	serviceStatistics = "sys_m_service_statistics"
 )
 
-
-
 // Metric descriptors.
 var (
 	serviceStatisticsActiveStatusDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, serviceStatistics, "status"),
 		"Service Active Status from sys.m_service_statistics.",
-		[]string{"hana_instance","service_name","host","port"}, nil,)
+		[]string{"hana_instance", "service_name", "host", "port"}, nil)
 	serviceStatisticsDurationDesc = prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, serviceStatistics, "status_duration_seconds"),
-			"Current service status duration (seconds) from sys.m_service_statistics.",
-			[]string{"hana_instance","service_name","service_status","host","port"}, nil,)		
+		prometheus.BuildFQName(namespace, serviceStatistics, "status_duration_seconds"),
+		"Current service status duration (seconds) from sys.m_service_statistics.",
+		[]string{"hana_instance", "service_name", "service_status", "host", "port"}, nil)
 )
 
 // ScrapeserviceStatistics collects from `SYS.M_SERVICE_STATISTICS`.
@@ -52,25 +49,22 @@ func (ScrapeServiceStatistics) Scrape(db *sql.DB, ch chan<- prometheus.Metric) e
 	}
 	defer serviceStatisticsRows.Close()
 
-	var service_name string 
+	var service_name string
 	var host string
 	var port string
 	var active_status sql.RawBytes
 	var duration float64
 
-
 	for serviceStatisticsRows.Next() {
 		if err := serviceStatisticsRows.Scan(&service_name, &host, &port, &active_status, &duration); err != nil {
 			return err
 		}
-		if active_statusVal, ok := parseStatus(active_status); ok { 
-			ch <- prometheus.MustNewConstMetric(serviceStatisticsActiveStatusDesc, prometheus.GaugeValue, active_statusVal, Hana_instance,service_name,host,port)
+		if active_statusVal, ok := parseStatus(active_status); ok {
+			ch <- prometheus.MustNewConstMetric(serviceStatisticsActiveStatusDesc, prometheus.GaugeValue, active_statusVal, Hana_instance, service_name, host, port)
 		}
-		ch <- prometheus.MustNewConstMetric(serviceStatisticsDurationDesc, prometheus.GaugeValue, duration,Hana_instance,service_name,string(active_status),host,port)
-
-			}
-			return nil
+		ch <- prometheus.MustNewConstMetric(serviceStatisticsDurationDesc, prometheus.GaugeValue, duration, Hana_instance, service_name, string(active_status), host, port)
 
 	}
+	return nil
 
-
+}
