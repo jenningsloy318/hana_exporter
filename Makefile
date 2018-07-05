@@ -18,10 +18,4 @@ include Makefile.common
 STATICCHECK_IGNORE = \
   github.com/jenningsloy318/hana_exporter/hana_exporter.go:SA1019
 
-DOCKER_IMAGE_NAME ?= hana-exporter
 
-test-docker:
-	@echo ">> testing docker image"
-	./test_image.sh "$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)" 9104
-
-.PHONY: test-docker
