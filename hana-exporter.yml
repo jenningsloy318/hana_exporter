@@ -1,0 +1,7 @@
+credentials:
+    default:
+        user: "USER"
+        pass: "password"
+    192.168.100.237:30015:
+        user: "USER"
+        pass: "Password1234"

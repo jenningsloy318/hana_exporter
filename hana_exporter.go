@@ -7,10 +7,7 @@ import (
 	"github.com/prometheus/common/log"
 	"github.com/prometheus/common/version"
 	"gopkg.in/alecthomas/kingpin.v2"
-	"gopkg.in/ini.v1"
 	"net/http"
-	"os"
-	"path"
 
 	"github.com/jenningsloy318/hana_exporter/collector"
 )
@@ -25,11 +22,11 @@ var (
 		"web.telemetry-path",
 		"Path under which to expose metrics.",
 	).Default("/metrics").String()
-	configHanacnf = kingpin.Flag(
-		"config.hana-cnf",
-		"Path to hana.cnf file to read HANA credentials from.",
-	).Default(path.Join(os.Getenv("HOME"), ".hana/hana.cnf")).String()
-	dsn string
+	configFile = kingpin.Flag("config.file", "Path to configuration file.").Default("hana-exporter.yml").String()
+	dsn        string
+	sc         = &SafeConfig{
+		C: &Config{},
+	}
 )
 
 // scrapers lists all possible collection methods and if they should be enabled by default.
@@ -39,31 +36,6 @@ var scrapers = map[collector.Scraper]bool{
 	collector.ScrapeLicenseStatus{}:           true,
 }
 
-func parseHanacnf(config interface{}) (string, error) {
-	var dsn string
-	opts := ini.LoadOptions{
-		// HANA ini file can have boolean keys.
-		AllowBooleanKeys: true,
-	}
-	cfg, err := ini.LoadSources(opts, config)
-	if err != nil {
-		return dsn, fmt.Errorf("failed reading ini file: %s", err)
-	}
-	user := cfg.Section("client").Key("user").String()
-	password := cfg.Section("client").Key("password").String()
-	if (user == "") || (password == "") {
-		return dsn, fmt.Errorf("no user or password specified under [client] in %s", config)
-	}
-	host := cfg.Section("client").Key("host").String()
-	port, err := cfg.Section("client").Key("port").Uint()
-	if (host == "") || (err != nil) {
-		return dsn, fmt.Errorf("no host or port specified under [client] in %s", config)
-	}
-	dsn = fmt.Sprintf("hdb://%s:%s@%s:%d", user, password, host, port)
-
-	return dsn, nil
-}
-
 func init() {
 	prometheus.MustRegister(version.NewCollector("hana_exporter"))
 }
@@ -71,26 +43,26 @@ func init() {
 // define new http handleer
 func newHandler(scrapers []collector.Scraper) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		filteredScrapers := scrapers
-		params := r.URL.Query()["collect[]"] // query if the request contains string collect[],which is defined in the prometheus scrape_configs, use this filter to enable only monitor perticular metrics for this hana instance
-
-		// Check if we have some "collect[]" query parameters.
-		if len(params) > 0 {
-			filters := make(map[string]bool)
-			for _, param := range params {
-				filters[param] = true
-			}
-
-			filteredScrapers = nil
-			for _, scraper := range scrapers {
-				if filters[scraper.Name()] {
-					filteredScrapers = append(filteredScrapers, scraper)
-				}
-			}
+		target := r.URL.Query().Get("target")
+		if target == "" {
+			http.Error(w, "'target' parameter must be specified", 400)
+			return
 		}
+		log.Debugf("Scraping target '%s'", target)
+		var targetCredentials Credentials
+		var err error
+		if targetCredentials, err = sc.CredentialsForTarget(target); err != nil {
+			log.Fatalf("Error getting credentialfor target %s file: %s", target, err)
+		}
+		user := targetCredentials.User
+		password := targetCredentials.Password
+		// construct dsn
+		dsn = fmt.Sprintf("hdb://%s:%s@%s", user, password, target)
 
 		registry := prometheus.NewRegistry()
-		registry.MustRegister(collector.New(dsn, filteredScrapers))
+
+		collector := collector.New(dsn, scrapers)
+		registry.MustRegister(collector)
 
 		gatherers := prometheus.Gatherers{
 			prometheus.DefaultGatherer,
@@ -125,6 +97,10 @@ func main() {
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
 
+	if err := sc.ReloadConfig(*configFile); err != nil {
+		log.Fatalf("Error parsing config file: %s", err)
+	}
+
 	// landingPage contains the HTML served at '/'.
 	// TODO: Make this nicer and more informative.
 	var landingPage = []byte(`<html>
@@ -139,23 +115,6 @@ func main() {
 	log.Infoln("Starting hana_exporter", version.Info())
 	log.Infoln("Build context", version.BuildContext())
 
-	dsn = os.Getenv("HANA_DATA_SOURCE_NAME")
-	host := os.Getenv("HANA_HOST")
-	port := os.Getenv("HANA_PORT")
-	user := os.Getenv("HANA_USER")
-	password := os.Getenv("HANA_PASSWORD")
-
-	// construct dsn from env or from conf file
-	if len(dsn) == 0 {
-		if len(host) != 0 && len(port) != 0 && len(user) != 0 && len(password) != 0 {
-			dsn = fmt.Sprintf("hdb://%s:%s@%s:%s", user, password, host, port)
-		} else {
-			var err error
-			if dsn, err = parseHanacnf(*configHanacnf); err != nil {
-				log.Fatal(err)
-			}
-		}
-	}
 	// Register only scrapers enabled by flag.
 	log.Infof("Enabled scrapers:")
 	enabledScrapers := []collector.Scraper{}
