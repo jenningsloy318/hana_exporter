@@ -2,14 +2,16 @@ package main
 
 import (
 	"fmt"
+	"github.com/jenningsloy318/hana_exporter/collector"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/log"
 	"github.com/prometheus/common/version"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"net/http"
-
-	"github.com/jenningsloy318/hana_exporter/collector"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 // define  flag
@@ -21,12 +23,13 @@ var (
 	metricPath = kingpin.Flag(
 		"web.telemetry-path",
 		"Path under which to expose metrics.",
-	).Default("/metrics").String()
+	).Default("/hana").String()
 	configFile = kingpin.Flag("config.file", "Path to configuration file.").Default("hana-exporter.yml").String()
 	dsn        string
 	sc         = &SafeConfig{
 		C: &Config{},
 	}
+	reloadCh chan chan error
 )
 
 // scrapers lists all possible collection methods and if they should be enabled by default.
@@ -71,6 +74,20 @@ func newHandler(scrapers []collector.Scraper) http.HandlerFunc {
 		// Delegate http serving to Prometheus client library, which will call collector.Collect.
 		h := promhttp.HandlerFor(gatherers, promhttp.HandlerOpts{})
 		h.ServeHTTP(w, r)
+	}
+}
+
+func updateConfiguration(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "POST":
+		rc := make(chan error)
+		reloadCh <- rc
+		if err := <-rc; err != nil {
+			http.Error(w, fmt.Sprintf("failed to reload config: %s", err), http.StatusInternalServerError)
+		}
+	default:
+		log.Errorf("POST method expected")
+		http.Error(w, "POST method expected", 400)
 	}
 }
 
@@ -124,7 +141,33 @@ func main() {
 			enabledScrapers = append(enabledScrapers, scraper)
 		}
 	}
+
+	// load config  first time
+	hup := make(chan os.Signal)
+	reloadCh = make(chan chan error)
+	signal.Notify(hup, syscall.SIGHUP)
+
+	go func() {
+		for {
+			select {
+			case <-hup:
+				if err := sc.ReloadConfig(*configFile); err != nil {
+					log.Errorf("Error reloading config: %s", err)
+				}
+			case rc := <-reloadCh:
+				if err := sc.ReloadConfig(*configFile); err != nil {
+					log.Errorf("Error reloading config: %s", err)
+					rc <- err
+				} else {
+					rc <- nil
+				}
+			}
+		}
+	}()
+
+	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc(*metricPath, prometheus.InstrumentHandlerFunc("metrics", newHandler(enabledScrapers)))
+	http.HandleFunc("/-/reload", updateConfiguration) // reload config
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write(landingPage)
 	})

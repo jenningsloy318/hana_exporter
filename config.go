@@ -25,31 +25,8 @@ type SafeConfig struct {
 type Credentials struct {
 	User     string `yaml:"user"`
 	Password string `yaml:"pass"`
-
-	// Catches all undefined fields and must be empty after parsing.
 }
 
-// UnmarshalYAML implements the yaml.Unmarshaler interface.
-func (s *Config) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	type plain Config
-	if err := unmarshal((*plain)(s)); err != nil {
-		return err
-	}
-	return nil
-}
-
-// UnmarshalYAML implements the yaml.Unmarshaler interface.
-func (s *Credentials) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	type plain Credentials
-	if err := unmarshal((*plain)(s)); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// ReloadConfig reloads the config in a concurrency-safe way. If the configFile
-// is unreadable or unparsable, an error is returned and the old config is kept.
 func (sc *SafeConfig) ReloadConfig(configFile string) error {
 	var c = &Config{}
 
