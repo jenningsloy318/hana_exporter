@@ -12,7 +12,7 @@ pkgs          = ./...
 PREFIX                  ?= $(shell pwd)
 BIN_DIR                 ?= $(shell pwd)
 
-all: deps vet style staticcheck unused  build test
+all: deps vet fmt style staticcheck unused  build test
 
 ## ignore the error of "Using a deprecated function, variable, constant or field" when static check, refer to https://github.com/dominikh/go-tools/blob/master/cmd/staticcheck/docs/checks/SA1019
 STATICCHECK_IGNORE = \
@@ -49,33 +49,41 @@ vet:
 	@echo ">> vetting code"
 	$(GO) vet $(pkgs)
 
-staticcheck: $(STATICCHECK)
+staticcheck: | $(STATICCHECK)
 	@echo ">> running staticcheck"
 	$(STATICCHECK) -ignore "$(STATICCHECK_IGNORE)" $(pkgs)
 
-unused: $(GOVENDOR)
+unused: 
 	@echo ">> running check for unused packages"
 	@$(GOVENDOR) list +unused | grep . && exit 1 || echo 'No unused packages'
 
-build: promu
+build: |$(PROMU)
 	@echo ">> building binaries"
 	$(PROMU) build --prefix $(PREFIX)
 
-deps:
+deps:  |$(GODEP)
 	@echo ">> update the dependencies"
-	$(GO) get -u github.com/golang/dep/cmd/dep
 	$(GODEP) ensure -update
-tarball: promu
+
+tarball:  | $(PROMU)
 	@echo ">> building release tarball"
 	$(PROMU) tarball --prefix $(PREFIX) $(BIN_DIR)
 
-promu:
+fmt:
+	@echo ">> format code style"
+	$(GOFMT) -w $$(find . -path ./vendor -prune -o -name '*.go' -print) 
+
+
+$(GODEP):
+	GOOS= GOARCH= $(GO) get -u github.com/golang/dep/cmd/dep
+
+$(PROMU):
 	GOOS= GOARCH= $(GO) get -u github.com/prometheus/promu
 
-$(FIRST_GOPATH)/bin/staticcheck:
+$(STATICCHECK):
 	GOOS= GOARCH= $(GO) get -u honnef.co/go/tools/cmd/staticcheck
 
-$(FIRST_GOPATH)/bin/govendor:
+$(GOVENDOR):
 	GOOS= GOARCH= $(GO) get -u github.com/kardianos/govendor
 
-.PHONY: all style check_license format build test vet assets tarball  promu staticcheck $(FIRST_GOPATH)/bin/staticcheck govendor $(FIRST_GOPATH)/bin/govendor dep $(FIRST_GOPATH)/bin/dep
+.PHONY: all style check_license format build test vet assets tarball fmt $(GODEP)  $(PROMU) $(STATICCHECK) $(GOVENDOR)
