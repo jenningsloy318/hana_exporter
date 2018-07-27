@@ -19,11 +19,11 @@ const (
 // Metric descriptors.
 var (
 	disksTotalSizeDesc = prometheus.NewDesc(
-		prometheus.BuildFQName(namespace, disks, "totalSize"),
+		prometheus.BuildFQName(namespace, disks, "total_size"),
 		"Volume Size.",
 		[]string{"hana_instance", "host", "path", "usage_type"}, nil)
 	disksUsedSizeDesc = prometheus.NewDesc(
-		prometheus.BuildFQName(namespace, disks, "usedSize"),
+		prometheus.BuildFQName(namespace, disks, "used_size"),
 		"Volume Used Space.",
 		[]string{"hana_instance", "host", "path", "usage_type"}, nil)
 )
