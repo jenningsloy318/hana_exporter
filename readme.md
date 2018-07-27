@@ -66,8 +66,7 @@ make build
 
 # Parameter Explanation
 
- - hana_sys_m_service_statistics_status, different value represent different status
-
+ - --collect.sys_m_service_statistics, the metric hana_sys_m_service_statistics_status value and status mapping as following table:
 
     value | status |  
     ---------|---------- 
