@@ -178,8 +178,18 @@ func parseStatus(data sql.RawBytes) (float64, bool) {
 	if bytes.Compare(data, []byte("YES")) == 0 {
 		return 1, true
 	}
-	if bytes.Compare(data, []byte("NO")) == 0 || bytes.Compare(data, []byte("UNKNOWN")) == 0 || bytes.Compare(data, []byte("STARTING")) == 0 || bytes.Compare(data, []byte("STOPPING")) == 0 {
+	if bytes.Compare(data, []byte("NO")) == 0 {
 		return 0, true
+	}
+
+	if bytes.Compare(data, []byte("UNKNOWN")) == 0 {
+		return 2, true
+	}
+	if bytes.Compare(data, []byte("STARTING")) == 0 {
+		return 3, true
+	}
+	if bytes.Compare(data, []byte("STOPPING")) == 0 {
+		return 4, true
 	}
 	value, err := strconv.ParseFloat(string(data), 64)
 	return value, err == nil
