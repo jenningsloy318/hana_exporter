@@ -6,6 +6,7 @@ gather all hana info from its system table/views, following the description at
 
 http://sap.optimieren.de/hana/hana/html/sys_statistics_views.html
 
+the exporter itself metrics exposed at `/metrics`, and the hana database metrics exposed at `/hana`
 # Usage 
 create a configuration `hana-exporter.yml`, which contains the credentials of hana instance.
 ```yaml
@@ -24,7 +25,7 @@ hana_exporter --config.file=hana-exporter.yml
 
 then we can get the metrics via 
 ```
-curl http://<hana-export host>:9460/metrics?target=192.168.100.237:30015
+curl http://<hana-export host>:9460/hana?target=192.168.100.237:30015
 
 ```
 
@@ -36,7 +37,7 @@ add hana-exporter job conif as following
   - job_name: 'hana-exporter'
 
     # metrics_path defaults to '/metrics'
-    metrics_path: /metrics
+    metrics_path: /hana
 
 
     # scheme defaults to 'http'.
@@ -62,3 +63,16 @@ git clone git@github.com:jenningsloy318/hana_exporter.git
 cd hana_exporter
 make build
 ```
+
+# Parameter Explanation
+
+ - hana_sys_m_service_statistics_status, different value represent different status
+
+
+    value | status |  
+    ---------|---------- 
+    0 | NO
+    1 | YES
+    2 | UNKNOWN
+    3 |STARTING
+    4 |STOPPING
