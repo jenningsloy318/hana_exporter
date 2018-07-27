@@ -52,3 +52,13 @@ add hana-exporter job conif as following
       - target_label: __address__
         replacement: localhost:9460  ### the address of the hana-exporter address
 ````
+
+# Build
+
+build the binary is pretty simple
+
+```sh
+git clone git@github.com:jenningsloy318/hana_exporter.git
+cd hana_exporter
+make build
+```
