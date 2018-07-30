@@ -47,11 +47,11 @@ func (ScrapeSharedMemory) Help() string {
 
 // Scrape collects data from database connection and sends it over channel as prometheus metric.
 func (ScrapeSharedMemory) Scrape(db *sql.DB, ch chan<- prometheus.Metric) error {
-	disksRows, err := db.Query(sharedMemoryQuery)
+	sharedMemoryRows, err := db.Query(sharedMemoryQuery)
 	if err != nil {
 		return err
 	}
-	defer disksRows.Close()
+	defer sharedMemoryRows.Close()
 
 	var host string
 	var port string
@@ -60,8 +60,8 @@ func (ScrapeSharedMemory) Scrape(db *sql.DB, ch chan<- prometheus.Metric) error 
 	var used_size float64
 	var free_size float64
 
-	for disksRows.Next() {
-		if err := disksRows.Scan(&host, &port, &category, &allocated_size, &used_size, &free_size); err != nil {
+	for sharedMemoryRows.Next() {
+		if err := sharedMemoryRows.Scan(&host, &port, &category, &allocated_size, &used_size, &free_size); err != nil {
 			return err
 		}
 		ch <- prometheus.MustNewConstMetric(sharedMemoryAllocatedSizeDesc, prometheus.GaugeValue, allocated_size, Hana_instance, host, port, category)
