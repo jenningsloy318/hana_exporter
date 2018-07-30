@@ -40,7 +40,7 @@ var (
 		[]string{"hana_instance", "host", "port", "schema_name", "table_name", "part_id"}, nil)
 )
 
-// Scrapedisks collects from `SYS.M_SHARED_MEMORY;`.
+// Scrapedisks collects from `SYS.M_CS_TABLES;`.
 type ScrapeCsTables struct{}
 
 // Name of the Scraper. Should be unique.
