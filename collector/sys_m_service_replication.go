@@ -11,21 +11,25 @@ import (
 
 const (
 	// Scrape query.
-	serviceReplicationQuery = `SELECT HOST,PATH,USAGE_TYPE,TOTAL_SIZE,USED_SIZE FROM M_SERVICE_REPLICATION`
+	serviceReplicationQuery = ` SELECT HOST,PORT,VOLUME_ID,SECONDARY_HOST,SECONDARY_PORT,SECONDARY_ACTIVE_STATUS,SECONDARY_FULLY_RECOVERABLE,REPLICATION_MODE,REPLICATION_STATUS   from SYS.M_SERVICE_REPLICATION;`
 	// Subsystem.
-	serviceReplication = "sys_m_disks"
+	serviceReplication = "sys_m_service_replication"
 )
 
 // Metric descriptors.
 var (
-	disksTotalSizeDesc = prometheus.NewDesc(
-		prometheus.BuildFQName(namespace, disks, "total_size"),
-		"Volume Size.",
-		[]string{"hana_instance", "host", "path", "usage_type"}, nil)
-	disksUsedSizeDesc = prometheus.NewDesc(
-		prometheus.BuildFQName(namespace, disks, "used_size"),
-		"Volume Used Space.",
-		[]string{"hana_instance", "host", "path", "usage_type"}, nil)
+	serviceReplicationSecondaryActiveStatusDesc = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, serviceReplication, "secondary_active_status"),
+		"Secondary Active Status.",
+		[]string{"hana_instance", "host", "port", "volume_id", "secondary_host", "secondary_port"}, nil)
+	serviceReplicationSecondaryFullRecoverableDesc = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, serviceReplication, "secondary_fully_recoverable"),
+		"Indicates if secondary is fully recoverable.",
+		[]string{"hana_instance", "host", "port", "volume_id", "secondary_host", "secondary_port"}, nil)
+	serviceReplicationReplicationStatusDesc = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, serviceReplication, "replication_status"),
+		"Replication Status.",
+		[]string{"hana_instance", "host", "port", "volume_id", "secondary_host", "secondary_port", "replication_mode"}, nil)
 )
 
 // Scrapedisks collects from `M_SERVICE_REPLICATION;`.
@@ -50,18 +54,30 @@ func (ScrapeServiceReplication) Scrape(db *sql.DB, ch chan<- prometheus.Metric) 
 	defer serviceReplicationRows.Close()
 
 	var host string
-	var path string
-	var usage_type string
-	var total_size float64
-	var used_size float64
+	var port string
+	var volume_id string
+	var secondary_host string
+	var secondary_port string
+	var secondary_active_status sql.RawBytes
+	var secondary_fully_recoverable sql.RawBytes
+	var replication_mode string
+	var replication_status sql.RawBytes
 
 	for serviceReplicationRows.Next() {
-		if err := serviceReplicationRows.Scan(&host, &path, &usage_type, &total_size, &used_size); err != nil {
+		if err := serviceReplicationRows.Scan(&host, &port, &volume_id, &secondary_host, &secondary_port, &secondary_active_status, &secondary_fully_recoverable, &replication_mode, &replication_status); err != nil {
 			return err
-		}
-		ch <- prometheus.MustNewConstMetric(disksTotalSizeDesc, prometheus.GaugeValue, total_size, Hana_instance, host, path, usage_type)
-		ch <- prometheus.MustNewConstMetric(disksUsedSizeDesc, prometheus.GaugeValue, used_size, Hana_instance, host, path, usage_type)
 
+		}
+
+		if secondary_active_statusVal, ok := parseStatus(secondary_active_status); ok {
+			ch <- prometheus.MustNewConstMetric(serviceReplicationSecondaryActiveStatusDesc, prometheus.GaugeValue, secondary_active_statusVal, Hana_instance, host, port, volume_id, secondary_host, secondary_port)
+		}
+		if secondary_fully_recoverableVal, ok := parseStatus(secondary_fully_recoverable); ok {
+			ch <- prometheus.MustNewConstMetric(serviceReplicationSecondaryFullRecoverableDesc, prometheus.GaugeValue, secondary_fully_recoverableVal, Hana_instance, host, port, volume_id, secondary_host, secondary_port)
+		}
+		if replication_statusVal, ok := parseStatus(replication_status); ok {
+			ch <- prometheus.MustNewConstMetric(serviceReplicationReplicationStatusDesc, prometheus.GaugeValue, replication_statusVal, Hana_instance, host, port, volume_id, secondary_host, secondary_port, replication_mode)
+		}
 	}
 	return nil
 
