@@ -11,7 +11,7 @@ import (
 
 const (
 	// Scrape query.
-	serviceStatisticsQuery = ` select SERVICE_NAME,HOST,PORT,ACTIVE_STATUS, seconds_between(TO_SECONDDATE(START_TIME),TO_SECONDDATE(SYS_TIMESTAMP)) as DURATION, PROCESS_CPU_TIME,TOTAL_CPU_TIME,PROCESS_PHYSICAL_MEMORY,PHYSICAL_MEMORY,REQUESTS_PER_SEC,RESPONSE_TIME,FINISHED_NON_INTERNAL_REQUEST_COUNT,ACTIVE_REQUEST_COUNT,PENDING_REQUEST_COUNT,ACTIVE_THREAD_COUNT,THREAD_COUNT from SYS.M_SERVICE_STATISTICS	`
+	serviceStatisticsQuery = ` select SERVICE_NAME,HOST,PORT,ACTIVE_STATUS, seconds_between(TO_SECONDDATE(START_TIME),TO_SECONDDATE(SYS_TIMESTAMP)) as DURATION, PROCESS_CPU_TIME,TOTAL_CPU_TIME,TOTAL_CPU,PROCESS_PHYSICAL_MEMORY,PHYSICAL_MEMORY,REQUESTS_PER_SEC,RESPONSE_TIME,FINISHED_NON_INTERNAL_REQUEST_COUNT,ACTIVE_REQUEST_COUNT,PENDING_REQUEST_COUNT,ACTIVE_THREAD_COUNT,THREAD_COUNT from SYS.M_SERVICE_STATISTICS	`
 	// Subsystem.
 	serviceStatistics = "sys_m_service_statistics"
 )
@@ -34,6 +34,11 @@ var (
 		prometheus.BuildFQName(namespace, serviceStatistics, "total_cpu_time"),
 		"CPU usage of all processes	since start from sys.m_service_statistics.",
 		[]string{"service_name", "service_status", "host", "port"}, nil)
+	serviceStatisticsTotalCPUDesc = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, serviceStatistics, "total_cpu"),
+		"CPU usage of all processes from sys.m_service_statistics.",
+		[]string{"service_name", "service_status", "host", "port"}, nil)
+
 	serviceStatisticsProcessPhysicalMemoryDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, serviceStatistics, "process_physical_memory"),
 		"Process physical memory usage from sys.m_service_statistics.",
@@ -100,6 +105,7 @@ func (ScrapeServiceStatistics) Scrape(db *sql.DB, ch chan<- prometheus.Metric) e
 	var duration float64
 	var process_cpu_time float64
 	var total_cpu_time float64
+	var total_cpu float64
 	var process_physical_memory float64
 	var physical_memory float64
 	var requests_per_sec float64
@@ -110,7 +116,7 @@ func (ScrapeServiceStatistics) Scrape(db *sql.DB, ch chan<- prometheus.Metric) e
 	var ctive_thread_count float64
 	var thread_count float64
 	for serviceStatisticsRows.Next() {
-		if err := serviceStatisticsRows.Scan(&service_name, &host, &port, &active_status, &duration, &process_cpu_time, &total_cpu_time, &process_physical_memory, &physical_memory, &requests_per_sec, &response_time, &finished_non_internal_request_count, &active_request_count, &pending_request_count, &ctive_thread_count, &thread_count); err != nil {
+		if err := serviceStatisticsRows.Scan(&service_name, &host, &port, &active_status, &duration, &process_cpu_time, &total_cpu_time, &total_cpu, &process_physical_memory, &physical_memory, &requests_per_sec, &response_time, &finished_non_internal_request_count, &active_request_count, &pending_request_count, &ctive_thread_count, &thread_count); err != nil {
 			return err
 		}
 		if active_statusVal, ok := parseStatus(active_status); ok {
@@ -119,6 +125,7 @@ func (ScrapeServiceStatistics) Scrape(db *sql.DB, ch chan<- prometheus.Metric) e
 		ch <- prometheus.MustNewConstMetric(serviceStatisticsDurationDesc, prometheus.GaugeValue, duration, service_name, string(active_status), host, port)
 		ch <- prometheus.MustNewConstMetric(serviceStatisticsProcessCPUTimeDesc, prometheus.GaugeValue, process_cpu_time, service_name, string(active_status), host, port)
 		ch <- prometheus.MustNewConstMetric(serviceStatisticsTotalCPUTimeDesc, prometheus.GaugeValue, total_cpu_time, service_name, string(active_status), host, port)
+		ch <- prometheus.MustNewConstMetric(serviceStatisticsTotalCPUDesc, prometheus.GaugeValue, total_cpu, service_name, string(active_status), host, port)
 		ch <- prometheus.MustNewConstMetric(serviceStatisticsProcessPhysicalMemoryDesc, prometheus.GaugeValue, process_physical_memory, service_name, string(active_status), host, port)
 		ch <- prometheus.MustNewConstMetric(serviceStatisticsPhysicalMemoryDesc, prometheus.GaugeValue, physical_memory, service_name, string(active_status), host, port)
 		ch <- prometheus.MustNewConstMetric(serviceStatisticsRequestsPerSecDesc, prometheus.GaugeValue, requests_per_sec, service_name, string(active_status), host, port)
