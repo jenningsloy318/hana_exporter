@@ -1,0 +1,11 @@
+[Unit]
+Description=hana exporter  service
+
+[Service]
+ExecStart=/usr/bin/hana_exporter --config.file=/etc/hana_exporter/hana_exporter.yml 
+Restart=always
+RestartSec=2s
+StartLimitInterval=0
+KillMode=process
+[Install]
+WantedBy=multi-user.target

@@ -57,11 +57,11 @@ unused:
 	@echo ">> running check for unused packages"
 	@$(GOVENDOR) list +unused | grep . && exit 1 || echo 'No unused packages'
 
-build: |$(PROMU)
+build: | $(PROMU)
 	@echo ">> building binaries"
 	$(PROMU) build --prefix $(PREFIX)
 
-deps:  |$(GODEP)
+deps:  | $(GODEP)
 	@echo ">> update the dependencies"
 	$(GODEP) ensure -update
 
