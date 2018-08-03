@@ -76,6 +76,7 @@ make build
     3 |STARTING
     4 |STOPPING
  - --collect.sys_m_service_replication, the metric hana_sys_m_service_statistics_status value and status mapping as following table:
+ 
     value | status |  
     ---------|---------- 
     0 | ERROR
