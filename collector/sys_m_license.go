@@ -21,7 +21,7 @@ var (
 	licenseStatusDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, licenseStatus, "expire_days"),
 		"License expire days from sys.m_service_statistics.",
-		[]string{"hana_instance", "hardware_key", "system_id", "product_limit"}, nil)
+		[]string{"hardware_key", "system_id", "product_limit"}, nil)
 )
 
 // ScrapeserviceStatistics collects from `sys.m_service_statistics`.
@@ -55,7 +55,7 @@ func (ScrapeLicenseStatus) Scrape(db *sql.DB, ch chan<- prometheus.Metric) error
 			return err
 		}
 
-		ch <- prometheus.MustNewConstMetric(licenseStatusDesc, prometheus.GaugeValue, expire_days, Hana_instance, hardware_key, system_id, product_limit)
+		ch <- prometheus.MustNewConstMetric(licenseStatusDesc, prometheus.GaugeValue, expire_days, hardware_key, system_id, product_limit)
 
 	}
 	return nil

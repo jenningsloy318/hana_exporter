@@ -21,55 +21,55 @@ var (
 	serviceStatisticsActiveStatusDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, serviceStatistics, "status"),
 		"Service Active Status from sys.m_service_statistics.",
-		[]string{"hana_instance", "service_name", "host", "port"}, nil)
+		[]string{"service_name", "host", "port"}, nil)
 	serviceStatisticsDurationDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, serviceStatistics, "status_duration_seconds"),
 		"Current service status duration (seconds) from sys.m_service_statistics.",
-		[]string{"hana_instance", "service_name", "service_status", "host", "port"}, nil)
+		[]string{"service_name", "service_status", "host", "port"}, nil)
 	serviceStatisticsProcessCPUTimeDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, serviceStatistics, "process_cpu_time"),
 		"CPU usage of current process since start from sys.m_service_statistics.",
-		[]string{"hana_instance", "service_name", "service_status", "host", "port"}, nil)
+		[]string{"service_name", "service_status", "host", "port"}, nil)
 	serviceStatisticsTotalCPUTimeDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, serviceStatistics, "total_cpu_time"),
 		"CPU usage of all processes	since start from sys.m_service_statistics.",
-		[]string{"hana_instance", "service_name", "service_status", "host", "port"}, nil)
+		[]string{"service_name", "service_status", "host", "port"}, nil)
 	serviceStatisticsProcessPhysicalMemoryDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, serviceStatistics, "process_physical_memory"),
 		"Process physical memory usage from sys.m_service_statistics.",
-		[]string{"hana_instance", "service_name", "service_status", "host", "port"}, nil)
+		[]string{"service_name", "service_status", "host", "port"}, nil)
 	serviceStatisticsPhysicalMemoryDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, serviceStatistics, "physical_memory"),
 		"Process physical memory usage from sys.m_service_statistics.",
-		[]string{"hana_instance", "service_name", "service_status", "host", "port"}, nil)
+		[]string{"service_name", "service_status", "host", "port"}, nil)
 	serviceStatisticsRequestsPerSecDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, serviceStatistics, "requests_per_sec"),
 		"Requests per second. Average over last 1000 requests from sys.m_service_statistics.",
-		[]string{"hana_instance", "service_name", "service_status", "host", "port"}, nil)
+		[]string{"service_name", "service_status", "host", "port"}, nil)
 	serviceStatisticsResponseTimeDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, serviceStatistics, "response_time"),
 		"Request response time. Average over last 1000 requests from sys.m_service_statistics.",
-		[]string{"hana_instance", "service_name", "service_status", "host", "port"}, nil)
+		[]string{"service_name", "service_status", "host", "port"}, nil)
 	serviceStatisticsFinishedNonInternalRequestCountDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, serviceStatistics, "finished_non_internal_request_count"),
 		"Finished requests from sys.m_service_statistics.",
-		[]string{"hana_instance", "service_name", "service_status", "host", "port"}, nil)
+		[]string{"service_name", "service_status", "host", "port"}, nil)
 	serviceStatisticsActiveRequestCountDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, serviceStatistics, "active_request_count"),
 		"Number of active requests from sys.m_service_statistics.",
-		[]string{"hana_instance", "service_name", "service_status", "host", "port"}, nil)
+		[]string{"service_name", "service_status", "host", "port"}, nil)
 	serviceStatisticsPendingRequestCountDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, serviceStatistics, "pending_request_count"),
 		"Number of pending requests from sys.m_service_statistics.",
-		[]string{"hana_instance", "service_name", "service_status", "host", "port"}, nil)
+		[]string{"service_name", "service_status", "host", "port"}, nil)
 	serviceStatisticsActiveThreadCountDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, serviceStatistics, "active_thread_count"),
 		"active_thread_count from sys.m_service_statistics.",
-		[]string{"hana_instance", "service_name", "service_status", "host", "port"}, nil)
+		[]string{"service_name", "service_status", "host", "port"}, nil)
 	serviceStatisticsThreadCountDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, serviceStatistics, "thread_count"),
 		"active_thread_count from sys.m_service_statistics.",
-		[]string{"hana_instance", "service_name", "service_status", "host", "port"}, nil)
+		[]string{"service_name", "service_status", "host", "port"}, nil)
 )
 
 // ScrapeserviceStatistics collects from `SYS.M_SERVICE_STATISTICS`.
@@ -114,20 +114,20 @@ func (ScrapeServiceStatistics) Scrape(db *sql.DB, ch chan<- prometheus.Metric) e
 			return err
 		}
 		if active_statusVal, ok := parseStatus(active_status); ok {
-			ch <- prometheus.MustNewConstMetric(serviceStatisticsActiveStatusDesc, prometheus.GaugeValue, active_statusVal, Hana_instance, service_name, host, port)
+			ch <- prometheus.MustNewConstMetric(serviceStatisticsActiveStatusDesc, prometheus.GaugeValue, active_statusVal, service_name, host, port)
 		}
-		ch <- prometheus.MustNewConstMetric(serviceStatisticsDurationDesc, prometheus.GaugeValue, duration, Hana_instance, service_name, string(active_status), host, port)
-		ch <- prometheus.MustNewConstMetric(serviceStatisticsProcessCPUTimeDesc, prometheus.GaugeValue, process_cpu_time, Hana_instance, service_name, string(active_status), host, port)
-		ch <- prometheus.MustNewConstMetric(serviceStatisticsTotalCPUTimeDesc, prometheus.GaugeValue, total_cpu_time, Hana_instance, service_name, string(active_status), host, port)
-		ch <- prometheus.MustNewConstMetric(serviceStatisticsProcessPhysicalMemoryDesc, prometheus.GaugeValue, process_physical_memory, Hana_instance, service_name, string(active_status), host, port)
-		ch <- prometheus.MustNewConstMetric(serviceStatisticsPhysicalMemoryDesc, prometheus.GaugeValue, physical_memory, Hana_instance, service_name, string(active_status), host, port)
-		ch <- prometheus.MustNewConstMetric(serviceStatisticsRequestsPerSecDesc, prometheus.GaugeValue, requests_per_sec, Hana_instance, service_name, string(active_status), host, port)
-		ch <- prometheus.MustNewConstMetric(serviceStatisticsResponseTimeDesc, prometheus.GaugeValue, response_time, Hana_instance, service_name, string(active_status), host, port)
-		ch <- prometheus.MustNewConstMetric(serviceStatisticsFinishedNonInternalRequestCountDesc, prometheus.CounterValue, finished_non_internal_request_count, Hana_instance, service_name, string(active_status), host, port)
-		ch <- prometheus.MustNewConstMetric(serviceStatisticsActiveRequestCountDesc, prometheus.CounterValue, active_request_count, Hana_instance, service_name, string(active_status), host, port)
-		ch <- prometheus.MustNewConstMetric(serviceStatisticsPendingRequestCountDesc, prometheus.CounterValue, pending_request_count, Hana_instance, service_name, string(active_status), host, port)
-		ch <- prometheus.MustNewConstMetric(serviceStatisticsActiveThreadCountDesc, prometheus.GaugeValue, ctive_thread_count, Hana_instance, service_name, string(active_status), host, port)
-		ch <- prometheus.MustNewConstMetric(serviceStatisticsThreadCountDesc, prometheus.GaugeValue, thread_count, Hana_instance, service_name, string(active_status), host, port)
+		ch <- prometheus.MustNewConstMetric(serviceStatisticsDurationDesc, prometheus.GaugeValue, duration, service_name, string(active_status), host, port)
+		ch <- prometheus.MustNewConstMetric(serviceStatisticsProcessCPUTimeDesc, prometheus.GaugeValue, process_cpu_time, service_name, string(active_status), host, port)
+		ch <- prometheus.MustNewConstMetric(serviceStatisticsTotalCPUTimeDesc, prometheus.GaugeValue, total_cpu_time, service_name, string(active_status), host, port)
+		ch <- prometheus.MustNewConstMetric(serviceStatisticsProcessPhysicalMemoryDesc, prometheus.GaugeValue, process_physical_memory, service_name, string(active_status), host, port)
+		ch <- prometheus.MustNewConstMetric(serviceStatisticsPhysicalMemoryDesc, prometheus.GaugeValue, physical_memory, service_name, string(active_status), host, port)
+		ch <- prometheus.MustNewConstMetric(serviceStatisticsRequestsPerSecDesc, prometheus.GaugeValue, requests_per_sec, service_name, string(active_status), host, port)
+		ch <- prometheus.MustNewConstMetric(serviceStatisticsResponseTimeDesc, prometheus.GaugeValue, response_time, service_name, string(active_status), host, port)
+		ch <- prometheus.MustNewConstMetric(serviceStatisticsFinishedNonInternalRequestCountDesc, prometheus.CounterValue, finished_non_internal_request_count, service_name, string(active_status), host, port)
+		ch <- prometheus.MustNewConstMetric(serviceStatisticsActiveRequestCountDesc, prometheus.CounterValue, active_request_count, service_name, string(active_status), host, port)
+		ch <- prometheus.MustNewConstMetric(serviceStatisticsPendingRequestCountDesc, prometheus.CounterValue, pending_request_count, service_name, string(active_status), host, port)
+		ch <- prometheus.MustNewConstMetric(serviceStatisticsActiveThreadCountDesc, prometheus.GaugeValue, ctive_thread_count, service_name, string(active_status), host, port)
+		ch <- prometheus.MustNewConstMetric(serviceStatisticsThreadCountDesc, prometheus.GaugeValue, thread_count, service_name, string(active_status), host, port)
 
 	}
 	return nil

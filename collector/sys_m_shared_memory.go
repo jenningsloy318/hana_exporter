@@ -21,15 +21,15 @@ var (
 	sharedMemoryAllocatedSizeDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, sharedMemory, "allocated_size"),
 		"Allocated shared memory size on the module.",
-		[]string{"hana_instance", "host", "port", "category"}, nil)
+		[]string{"host", "port", "category"}, nil)
 	sharedMemoryUsedSizeDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, sharedMemory, "used_size"),
 		"Used shared memory size on the module.",
-		[]string{"hana_instance", "host", "port", "category"}, nil)
+		[]string{"host", "port", "category"}, nil)
 	sharedMemoryFreeSizeDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, sharedMemory, "free_size"),
 		"Used shared memory size on the module.",
-		[]string{"hana_instance", "host", "port", "category"}, nil)
+		[]string{"host", "port", "category"}, nil)
 )
 
 // Scrapedisks collects from `SYS.M_SHARED_MEMORY;`.
@@ -64,9 +64,9 @@ func (ScrapeSharedMemory) Scrape(db *sql.DB, ch chan<- prometheus.Metric) error 
 		if err := sharedMemoryRows.Scan(&host, &port, &category, &allocated_size, &used_size, &free_size); err != nil {
 			return err
 		}
-		ch <- prometheus.MustNewConstMetric(sharedMemoryAllocatedSizeDesc, prometheus.GaugeValue, allocated_size, Hana_instance, host, port, category)
-		ch <- prometheus.MustNewConstMetric(sharedMemoryUsedSizeDesc, prometheus.GaugeValue, used_size, Hana_instance, host, port, category)
-		ch <- prometheus.MustNewConstMetric(sharedMemoryFreeSizeDesc, prometheus.GaugeValue, free_size, Hana_instance, host, port, category)
+		ch <- prometheus.MustNewConstMetric(sharedMemoryAllocatedSizeDesc, prometheus.GaugeValue, allocated_size, host, port, category)
+		ch <- prometheus.MustNewConstMetric(sharedMemoryUsedSizeDesc, prometheus.GaugeValue, used_size, host, port, category)
+		ch <- prometheus.MustNewConstMetric(sharedMemoryFreeSizeDesc, prometheus.GaugeValue, free_size, host, port, category)
 
 	}
 	return nil

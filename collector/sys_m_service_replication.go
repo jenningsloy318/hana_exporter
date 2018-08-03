@@ -21,15 +21,15 @@ var (
 	serviceReplicationSecondaryActiveStatusDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, serviceReplication, "secondary_active_status"),
 		"Secondary Active Status.",
-		[]string{"hana_instance", "host", "port", "volume_id", "secondary_host", "secondary_port"}, nil)
+		[]string{"host", "port", "volume_id", "secondary_host", "secondary_port"}, nil)
 	serviceReplicationSecondaryFullRecoverableDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, serviceReplication, "secondary_fully_recoverable"),
 		"Indicates if secondary is fully recoverable.",
-		[]string{"hana_instance", "host", "port", "volume_id", "secondary_host", "secondary_port"}, nil)
+		[]string{"host", "port", "volume_id", "secondary_host", "secondary_port"}, nil)
 	serviceReplicationReplicationStatusDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, serviceReplication, "replication_status"),
 		"Replication Status.",
-		[]string{"hana_instance", "host", "port", "volume_id", "secondary_host", "secondary_port", "replication_mode"}, nil)
+		[]string{"host", "port", "volume_id", "secondary_host", "secondary_port", "replication_mode"}, nil)
 )
 
 // Scrapedisks collects from `M_SERVICE_REPLICATION;`.
@@ -70,13 +70,13 @@ func (ScrapeServiceReplication) Scrape(db *sql.DB, ch chan<- prometheus.Metric) 
 		}
 
 		if secondary_active_statusVal, ok := parseStatus(secondary_active_status); ok {
-			ch <- prometheus.MustNewConstMetric(serviceReplicationSecondaryActiveStatusDesc, prometheus.GaugeValue, secondary_active_statusVal, Hana_instance, host, port, volume_id, secondary_host, secondary_port)
+			ch <- prometheus.MustNewConstMetric(serviceReplicationSecondaryActiveStatusDesc, prometheus.GaugeValue, secondary_active_statusVal, host, port, volume_id, secondary_host, secondary_port)
 		}
 		if secondary_fully_recoverableVal, ok := parseStatus(secondary_fully_recoverable); ok {
-			ch <- prometheus.MustNewConstMetric(serviceReplicationSecondaryFullRecoverableDesc, prometheus.GaugeValue, secondary_fully_recoverableVal, Hana_instance, host, port, volume_id, secondary_host, secondary_port)
+			ch <- prometheus.MustNewConstMetric(serviceReplicationSecondaryFullRecoverableDesc, prometheus.GaugeValue, secondary_fully_recoverableVal, host, port, volume_id, secondary_host, secondary_port)
 		}
 		if replication_statusVal, ok := parseStatus(replication_status); ok {
-			ch <- prometheus.MustNewConstMetric(serviceReplicationReplicationStatusDesc, prometheus.GaugeValue, replication_statusVal, Hana_instance, host, port, volume_id, secondary_host, secondary_port, replication_mode)
+			ch <- prometheus.MustNewConstMetric(serviceReplicationReplicationStatusDesc, prometheus.GaugeValue, replication_statusVal, host, port, volume_id, secondary_host, secondary_port, replication_mode)
 		}
 	}
 	return nil

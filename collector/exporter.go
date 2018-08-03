@@ -7,7 +7,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/log"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 )
@@ -30,7 +29,6 @@ var (
 		"Collector time duration.",
 		[]string{"collector"}, nil,
 	)
-	Hana_instance string
 )
 
 // Exporter collects HANA metrics. It implements prometheus.Collector.
@@ -54,7 +52,6 @@ func stringsplit(s rune) bool {
 
 // New returns a new HANA exporter for the provided DSN.
 func New(dsn string, scrapers []Scraper) *Exporter {
-	Hana_instance = strings.FieldsFunc(dsn, stringsplit)[1]
 
 	return &Exporter{
 		dsn:      dsn,
@@ -79,10 +76,9 @@ func New(dsn string, scrapers []Scraper) *Exporter {
 		}),
 
 		hanaUp: prometheus.NewGauge(prometheus.GaugeOpts{
-			Namespace:   namespace,
-			Name:        "up",
-			Help:        "Whether the HANA server is up.",
-			ConstLabels: prometheus.Labels{"hana_instance": Hana_instance},
+			Namespace: namespace,
+			Name:      "up",
+			Help:      "Whether the HANA server is up.",
 		}),
 	}
 }
