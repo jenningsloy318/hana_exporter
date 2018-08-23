@@ -1,4 +1,4 @@
-// Scrape `SHOW GLOBAL STATUS`.
+// Scrape `sys_m_license`.
 
 package collector
 
