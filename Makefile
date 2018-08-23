@@ -65,7 +65,7 @@ deps:  | $(GODEP)
 	@echo ">> update the dependencies"
 	$(GODEP) ensure -update
 
-tarball:  | $(PROMU)
+tarball:  | $(PROMU) build
 	@echo ">> building release tarball"
 	$(PROMU) tarball --prefix $(PREFIX) $(BIN_DIR)
 
