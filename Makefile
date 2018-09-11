@@ -73,6 +73,12 @@ fmt:
 	@echo ">> format code style"
 	$(GOFMT) -w $$(find . -path ./vendor -prune -o -name '*.go' -print) 
 
+package-release:
+	./scripts/build.py --release --package --platform=all --arch=all 
+
+package-nightly:
+	./scripts/build.py --nightly --package --platform=all --arch=all 
+
 
 $(GODEP):
 	GOOS= GOARCH= $(GO) get -u github.com/golang/dep/cmd/dep
@@ -86,4 +92,4 @@ $(STATICCHECK):
 $(GOVENDOR):
 	GOOS= GOARCH= $(GO) get -u github.com/kardianos/govendor
 
-.PHONY: all style check_license format build test vet assets tarball fmt $(GODEP)  $(PROMU) $(STATICCHECK) $(GOVENDOR)
+.PHONY: all style check_license format build test vet assets tarball fmt  $(GODEP)  $(PROMU) $(STATICCHECK) $(GOVENDOR) package-release  package-nightly

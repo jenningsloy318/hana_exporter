@@ -8,7 +8,7 @@ http://sap.optimieren.de/hana/hana/html/sys_statistics_views.html
 
 the exporter itself metrics exposed at `/metrics`, and the hana database metrics exposed at `/hana`
 # Usage 
-create a configuration `hana-exporter.yml`, which contains the credentials of hana instance.
+create a configuration `hana_exporter.yml`, which contains the credentials of hana instance.
 ```yaml
 credentials:
     default:
@@ -20,7 +20,7 @@ credentials:
 ```
 then start hana-exporter via 
 ```sh
-hana_exporter --config.file=hana-exporter.yml
+hana_exporter --config.file=hana_exporter.yml
 ```
 
 then we can get the metrics via 
@@ -63,7 +63,12 @@ git clone git@github.com:jenningsloy318/hana_exporter.git
 cd hana_exporter
 make build
 ```
+or package it as rpm or deb
+```
+make package-release
+```
 
+then you package can be found in `./build`
 # Parameter Explanation
 
  - --collect.sys_m_service_statistics, the metric hana_sys_m_service_statistics_status value and status mapping as following table:
