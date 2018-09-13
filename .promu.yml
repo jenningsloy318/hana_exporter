@@ -1,8 +1,8 @@
 repository:
     path: github.com/jenningsloy318/hana_exporter
 build:
+    prefix: ./build/
     flags: -a -tags netgo
-    
     ldflags: |
         -X {{repoPath}}/vendor/github.com/prometheus/common/version.Version={{.Version}}
         -X {{repoPath}}/vendor/github.com/prometheus/common/version.Revision={{.Revision}}
@@ -10,9 +10,9 @@ build:
         -X {{repoPath}}/vendor/github.com/prometheus/common/version.BuildUser={{user}}@{{host}}
         -X {{repoPath}}/vendor/github.com/prometheus/common/version.BuildDate={{date "20060102-15:04:05"}}
 tarball:
+    prefix: ./build/
     files:
-    - hana-exporter.yml
-    - scripts
+    - example/hana_exporter.yml
 crossbuild:
     platforms:
         - linux/amd64

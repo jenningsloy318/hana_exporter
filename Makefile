@@ -9,8 +9,7 @@ GOVENDOR     := $(FIRST_GOPATH)/bin/govendor
 GODEP				 := $(FIRST_GOPATH)/bin/dep
 pkgs          = ./...
 
-PREFIX                  ?= $(shell pwd)
-BIN_DIR                 ?= $(shell pwd)
+BIN_DIR                 ?= $(shell pwd)/build
 
 all: deps vet fmt style staticcheck unused  build test
 
@@ -59,32 +58,30 @@ unused:
 
 build: | $(PROMU)
 	@echo ">> building binaries"
-	$(PROMU) build --prefix $(PREFIX)
+	$(PROMU) build 
 
 deps:  | $(GODEP)
 	@echo ">> update the dependencies"
 	$(GODEP) ensure -update
 
-tarball:  | $(PROMU) build
+tarball:  |  build
 	@echo ">> building release tarball"
-	$(PROMU) tarball --prefix $(PREFIX) $(BIN_DIR)
+	$(PROMU) tarball  $(BIN_DIR)
 
 fmt:
 	@echo ">> format code style"
 	$(GOFMT) -w $$(find . -path ./vendor -prune -o -name '*.go' -print) 
 
-package-release:
-	./scripts/build.py --release --package --platform=all --arch=all 
+package:| $(PROMU) build
+	./scripts/package-rpm-deb.sh  
 
-package-nightly:
-	./scripts/build.py --nightly --package --platform=all --arch=all 
 
 
 $(GODEP):
 	GOOS= GOARCH= $(GO) get -u github.com/golang/dep/cmd/dep
 
-$(PROMU):
-	GOOS= GOARCH= $(GO) get -u github.com/prometheus/promu
+$(PROMU): 
+	GOOS= GOARCH= $(GO) get -u github.com/prometheus/promu 
 
 $(STATICCHECK):
 	GOOS= GOARCH= $(GO) get -u honnef.co/go/tools/cmd/staticcheck
@@ -92,4 +89,4 @@ $(STATICCHECK):
 $(GOVENDOR):
 	GOOS= GOARCH= $(GO) get -u github.com/kardianos/govendor
 
-.PHONY: all style check_license format build test vet assets tarball fmt  $(GODEP)  $(PROMU) $(STATICCHECK) $(GOVENDOR) package-release  package-nightly
+.PHONY: all style check_license format build test vet assets tarball fmt  $(GODEP)  $(PROMU) $(STATICCHECK) $(GOVENDOR) package

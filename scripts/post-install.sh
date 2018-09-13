@@ -1,14 +1,16 @@
 #!/bin/bash
 
 
-if ! grep "^prometheus:" /etc/group &>/dev/null; then
+if  ! getent group prometheus >/dev/null  ; then
     groupadd -r prometheus
 fi
 
-if ! id hana_exporter &>/dev/null; then
-    useradd -r -M hana_exporter -s /bin/false -d /etc/hana_exporter -g prometheus
+if  ! getent passwd hana_exporter  >/dev/null  ; then
+    useradd -r -M -s /bin/false -d /etc/hana_exporter -g prometheus hana_exporter
 fi
 
-
-systemctl enable hana_exporter || true
+chown -R hana_exporter /etc/hana_exporter
+chgrp -R prometheus /etc/hana_exporter
 systemctl daemon-reload || true
+systemctl enable hana_exporter || true
+systemctl start hana_exporter
