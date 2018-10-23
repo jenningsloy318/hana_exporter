@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/jenningsloy318/hana_exporter/collector"
+	"github.com/jenningsloy318/hana_exporter/config"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/log"
@@ -12,6 +13,9 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"context"
+	"html/template"
+	"time"
 )
 
 // define  flag
@@ -24,10 +28,10 @@ var (
 		"web.telemetry-path",
 		"Path under which to expose metrics.",
 	).Default("/hana").String()
-	configFile = kingpin.Flag("config.file", "Path to configuration file.").Default("hana-exporter.yml").String()
+	configFile = kingpin.Flag("config.file", "Path to configuration file.").Default("hana.yml").String()
 	dsn        string
-	sc         = &SafeConfig{
-		C: &Config{},
+	sc         = &config.SafeConfig{
+		C: &config.Config{},
 	}
 	reloadCh chan chan error
 )
@@ -50,13 +54,14 @@ func init() {
 // define new http handleer
 func newHandler(scrapers []collector.Scraper) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		ctx :=context.Background()
 		target := r.URL.Query().Get("target")
 		if target == "" {
 			http.Error(w, "'target' parameter must be specified", 400)
 			return
 		}
 		log.Debugf("Scraping target '%s'", target)
-		var targetCredentials Credentials
+		var targetCredentials config.Credentials
 		var err error
 		if targetCredentials, err = sc.CredentialsForTarget(target); err != nil {
 			log.Fatalf("Error getting credentialfor target %s file: %s", target, err)
