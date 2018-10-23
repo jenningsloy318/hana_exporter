@@ -1,0 +1,8 @@
+Credentials:
+    default:
+        user: "USER"
+        pass: "PASS"
+
+Jaeger:
+    agentEndpointURI: "192.168.1.1:6831"
+    collectorEndpointURI: "http://192.168.1.1:14268"
