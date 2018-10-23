@@ -1,4 +1,4 @@
 credentials:
     default:
         user: "USER"
-        pass: "password"
+        pass: "PASS"

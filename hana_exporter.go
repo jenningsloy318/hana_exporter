@@ -13,9 +13,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"context"
-	"html/template"
-	"time"
 )
 
 // define  flag
@@ -54,7 +51,6 @@ func init() {
 // define new http handleer
 func newHandler(scrapers []collector.Scraper) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx :=context.Background()
 		target := r.URL.Query().Get("target")
 		if target == "" {
 			http.Error(w, "'target' parameter must be specified", 400)
@@ -118,7 +114,7 @@ func main() {
 	}
 
 	// Parse flags.
-	log.AddFlags(kingpin.CommandLine)
+	//log.AddFlags(kingpin.CommandLine)
 	kingpin.Version(version.Print("hana_exporter"))
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
