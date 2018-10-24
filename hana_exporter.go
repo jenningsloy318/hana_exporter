@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	_ "github.com/SAP/go-hdb/driver"
 	"github.com/jenningsloy318/hana_exporter/collector"
@@ -15,6 +14,7 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 	"html/template"
 	"log"
+	"net"
 	"net/http"
 	"time"
 )
@@ -37,10 +37,12 @@ var (
 	configFile    = kingpin.Flag("config.file", "Path to configuration file.").Default("hana.yml").String()
 	sc            = &config.SafeConfig{
 		C: &config.Config{},
-	}	
-	version string 
-	branch string
-	commit string
+	}
+	version   string
+	branch    string
+	commit    string
+	buildUser string
+	buildHost string
 )
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
@@ -110,16 +112,33 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 
 		}
 	}
+	// extract context and span from the http.request
+	reqCtx := r.Context()
+	reqSpan := trace.FromContext(reqCtx)
+
+	// retrieve the remote client address and add it as attribute to the root span
+	IP, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		fmt.Fprintf(w, "userip: %q is not IP:port", r.RemoteAddr)
+	}
+	clientIP := net.ParseIP(IP)
+	if clientIP == nil {
+		//return nil, fmt.Errorf("userip: %q is not IP:port", req.RemoteAddr)
+		fmt.Fprintf(w, "userip: %q is not IP:port", r.RemoteAddr)
+		reqSpan.AddAttributes(trace.StringAttribute("ProxyClient.IP", r.Header.Get("X-FORWARDED-FOR")))
+	} else {
+		reqSpan.AddAttributes(trace.StringAttribute("Client.IP", clientIP.String()))
+	}
 
 	// start strace and collect data
-	ctx, span := trace.StartSpan(context.Background(), "metrics_data_trace")
-	span.Annotate([]trace.Attribute{trace.StringAttribute("step", "Initial")}, "This is first span of the trace")
+	rootCtx, rootSpan := trace.StartSpan(reqCtx, "metrics_data_trace")
+	rootSpan.Annotate([]trace.Attribute{trace.StringAttribute("step", "start")}, "This is first span of the trace")
 	stime := time.Now().String()
 	log.Printf("Starting to fectch data at %s", stime)
-	span.Annotate([]trace.Attribute{}, fmt.Sprintf("Starting to fectch data at %s.", stime))
+	rootSpan.Annotate([]trace.Attribute{}, fmt.Sprintf("Starting to fectch data at %s.", stime))
 
-	defer span.End()
-	collector.Collect(ctx, dsn, enabledCollectors)
+	defer rootSpan.End()
+	collector.Collect(rootCtx, dsn, enabledCollectors)
 
 	view.SetReportingPeriod(1 * time.Second)
 	prometheusExporter.ServeHTTP(w, r)
@@ -128,21 +147,19 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	// Parse flags.
-	Version := fmt.Sprintf("hana_exporter Version %s , Branch %s ,Commit %s", version, branch, commit)
-	kingpin.Version(Version)
+	versionInfo := fmt.Sprintf("hana_exporter version: %s , Branch: %s ,Commit ID: %s , Built by %s on %s at %s", version, branch, commit, buildUser, buildHost, time.Now().String())
+	kingpin.Version(versionInfo)
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
-
-	
 
 	if err := sc.ReloadConfig(*configFile); err != nil {
 		log.Fatalf("Error parsing config file: %s", err)
 	}
 	// create jaeger exporter
 	var jaegerConfig config.JaegerConfig
-	var err error 
+	var err error
 	if jaegerConfig, err = sc.ParseJaegerConfig(); err != nil {
-		log.Fatalf("Error getting jarger config,%s",  err)
+		log.Fatalf("Error getting jarger config,%s", err)
 	}
 
 	JaegerExporter, err := jaeger.NewExporter(jaeger.Options{
@@ -168,7 +185,6 @@ func main() {
 	mux.HandleFunc("/", homeHandler)
 	mux.Handle("/debug/", http.StripPrefix("/debug", zpages.Handler))
 	h := &ochttp.Handler{Handler: mux}
-
 
 	if err := http.ListenAndServe(*listenAddress, h); err != nil {
 		log.Fatalf("HTTP server ListenAndServe error: %v", err)

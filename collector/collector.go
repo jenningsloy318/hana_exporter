@@ -46,12 +46,11 @@ func Collect(ctx context.Context, dsn string, viewCollectors map[ViewCollector]b
 		sqlOpenSpan.Annotate([]trace.Attribute{}, err.Error())
 	}
 	sqlOpenSpan.End()
-
 	defer func() {
 		db.Close()
 		// Wait to 1 seconds so that the traces can be exported
-		waitTime := 1 * time.Second
-		log.Printf("Waiting for %s seconds to ensure all traces are exported before exiting", waitTime)
+		waitTime := 10 * time.Millisecond
+		log.Printf("Waiting for %s Millisecond  to ensure all traces are exported before exiting", waitTime)
 		<-time.After(waitTime)
 	}()
 
