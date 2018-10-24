@@ -7,8 +7,10 @@ endif
 VERSION := $(shell cat VERSION)
 BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 COMMIT := $(shell git rev-parse  HEAD)
+BUILDUSER :=$(shell id --user --name)
+BUILDHOST := $(shell hostname)
 BUILDFLAGS ?=
-LDFLAGS := $(LDFLAGS) -X main.commit=$(COMMIT) -X main.branch=$(BRANCH) -X main.version=$(VERSION)
+LDFLAGS := $(LDFLAGS) -X main.commit=$(COMMIT) -X main.branch=$(BRANCH) -X main.version=$(VERSION) -X main.buildUser=$(BUILDUSER) -X main.buildHost=$(BUILDHOST)
 
 
 
