@@ -3,7 +3,6 @@ package collector
 import (
 	"database/sql"
 	_ "github.com/SAP/go-hdb/driver"
-	"github.com/opencensus-integrations/ocsql"
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/trace"
 	//	"go.opencensus.io/exporter/prometheus"
@@ -16,53 +15,29 @@ type ViewCollector interface {
 	// return collector name
 	CollectorName() string
 	// return the views created by this collector
-	Views() []*view.View
+	NewViews() []*view.View
 	// real scrape
-	Scrape(ctx context.Context, db *sql.DB)
+	UpdateMeasurements(db *sql.DB)
 }
 
-func Collect(ctx context.Context, dsn string, viewCollectors map[ViewCollector]bool) {
 
-	sqlDriverRegCtx, sqlDriverRegSpan := trace.StartSpan(ctx, "sql_register_driver")
-	sqlDriverRegSpan.Annotate([]trace.Attribute{trace.StringAttribute("setp", "register_sql_driver")}, "Register the hana db driver into sql")
-
-	driverName, err := ocsql.Register("hdb", ocsql.WithAllTraceOptions())
-
+func NewHanaViews(dsn string)  []*view.View {
+	driverName, err := sql.Register("hdb")
 	if err != nil {
 		log.Fatalf("Failed to register the ocsql driver: %v", err)
 
 	}
-
-	sqlDriverRegSpan.End()
-
-	sqlOpenCtx, sqlOpenSpan := trace.StartSpan(sqlDriverRegCtx, "sql_open_db_conn")
-	sqlOpenSpan.AddAttributes(trace.StringAttribute("step", "sql_opendb_conn"))
-	sqlOpenSpan.Annotate([]trace.Attribute{trace.StringAttribute("setp", "sql_opendb_conn")}, "open sql connection to database")
-
 	db, err := sql.Open(driverName, dsn)
 
 	if err != nil {
 		log.Fatalf("Failed to open the HANA database: %v", err)
-		sqlOpenSpan.Annotate([]trace.Attribute{}, err.Error())
 	}
-	sqlOpenSpan.End()
-	defer func() {
-		db.Close()
-		// Wait to 1 seconds so that the traces can be exported
-		waitTime := 10 * time.Millisecond
-		log.Printf("Waiting for %s Millisecond  to ensure all traces are exported before exiting", waitTime)
-		<-time.After(waitTime)
-	}()
+	var disksCollector = DisksCollector{}
+	var licenseCollector = LicenseCollector{}
+ var HanaCollectors = []ViewCollector{licenseCollector,licenseCollector}
+ var HanaViews []*view.View
+for collector = range HanaCollectors {
+	HanaViews=append(HanaViews,collector.NewViews(db))
+}
 
-	sqlQueryctx, sqlQuerySpan := trace.StartSpan(sqlOpenCtx, "sql_queries")
-	sqlQuerySpan.AddAttributes(trace.StringAttribute("step", "sql_entry"))
-	sqlQuerySpan.Annotate([]trace.Attribute{trace.StringAttribute("step", "prepare_sql_execution")}, "prepare to execute the sqls, here is the entry point")
-	defer sqlQuerySpan.End()
-
-	//enabledCollectors := viewCollectors
-	//
-	for viewCollector := range viewCollectors {
-		viewCollector.Scrape(sqlQueryctx, db)
-
-	}
 }

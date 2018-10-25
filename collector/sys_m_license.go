@@ -45,46 +45,31 @@ func (LicenseCollector) CollectorName() string {
 	return "LicenseCollector"
 }
 
-func (LicenseCollector) Views() []*view.View {
-
+func (LicenseCollector) NewViews(db *sql.DB) []*view.View {
+	LicenseCollector.UpdateMeasurements(db)
 	return LicenseCollectorViews
 }
 
-func (LicenseCollector) Scrape(ctx context.Context, db *sql.DB) {
+func (LicenseCollector) UpdateMeasurements(db *sql.DB) {
 
-	ctx, span := trace.StartSpan(ctx, "sql_query_sys_m_license")
-	span.Annotate([]trace.Attribute{trace.StringAttribute("step", "excute_sql_query_sys_m_license")}, "excuting sql_query_sys_m_license sql to get the license info and exported as metrics")
-
-	//get the sql data
-	defer span.End()
-
-	// if muliple row returned
-	licenseRow := db.QueryRowContext(ctx, licenseStatusQuery)
+	licenseRow := db.QueryRow(licenseStatusQuery)
 
 	var hardware_key string
 	var system_id string
 	var product_limit string
 	var expire_days int64
 
-	sqlRowsScanCtx, sqlRowsScanSpan := trace.StartSpan(ctx, "sql_row_scan")
-	sqlRowsScanSpan.Annotate([]trace.Attribute{trace.StringAttribute("step", "get the value from sql returns and update it to variables")}, "get the value from sql returns and update it to variables")
 	err := licenseRow.Scan(&hardware_key, &system_id, &product_limit, &expire_days)
 	switch {
 	case err == sql.ErrNoRows:
 		log.Printf("No value returend")
-		sqlRowsScanSpan.Annotate([]trace.Attribute{}, "no rows returned")
 
 	case err != nil:
 		log.Fatal(err)
-		sqlRowsScanSpan.Annotate([]trace.Attribute{}, err.Error())
 
 	}
 
-	defer sqlRowsScanSpan.End()
-
-	measureSetCtx, measureSetCtxSpan := trace.StartSpan(sqlRowsScanCtx, "measure_value_set")
-	measureSetCtxSpan.Annotate([]trace.Attribute{trace.StringAttribute("step", "update_the_measurement")}, "use the variables to update the measurements")
-	licensectx, err := tag.New(measureSetCtx,
+	licensectx, err := tag.New(context.Background(),
 		tag.Insert(hardwareKeyTag, hardware_key),
 		tag.Insert(systemIdTag, system_id),
 		tag.Insert(productLimitTag, product_limit),
@@ -92,11 +77,9 @@ func (LicenseCollector) Scrape(ctx context.Context, db *sql.DB) {
 
 	if err != nil {
 		log.Fatalf("Failed to insert tag: %v", err)
-		measureSetCtxSpan.Annotate([]trace.Attribute{}, err.Error())
 
 	}
 
 	stats.Record(licensectx, expire_days_measure.M(expire_days))
 
-	measureSetCtxSpan.End()
 }

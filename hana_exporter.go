@@ -112,6 +112,10 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 
 		}
 	}
+	if err := view.Register(viewCollector.NewHanaViews(dsb)...); err != nil {
+		log.Fatalf("Failed to register hana views for metrics: %v", err)
+	}
+	
 	// extract context and span from the http.request
 	reqCtx := r.Context()
 	reqSpan := trace.FromContext(reqCtx)
