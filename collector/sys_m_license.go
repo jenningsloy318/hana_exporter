@@ -41,19 +41,16 @@ var (
 // ScrapeserviceStatistics collects from `sys.m_service_statistics`.
 type LicenseCollector struct{}
 
-func (LicenseCollector) CollectorName() string {
-	return "LicenseCollector"
-}
 
-func (LicenseCollector) Views() []*view.View {
+func (LicenseCollector) NewViews() []*view.View {
 
 	return LicenseCollectorViews
 }
 
-func (LicenseCollector) Scrape(ctx context.Context, db *sql.DB) {
+func (LicenseCollector) UpdateMeasurementData(ctx context.Context, db *sql.DB) {
 
-	ctx, span := trace.StartSpan(ctx, "sql_query_sys_m_license")
-	span.Annotate([]trace.Attribute{trace.StringAttribute("step", "excute_sql_query_sys_m_license")}, "excuting sql_query_sys_m_license sql to get the license info and exported as metrics")
+	ctx, span := trace.StartSpan(ctx, "sql:excute_licenseStatusQuery")
+	span.Annotate([]trace.Attribute{trace.StringAttribute("step", "sql:excute_licenseStatusQuery")}, "excuting sql_query_sys_m_license sql to get the license info and exported as metrics")
 
 	//get the sql data
 	defer span.End()
@@ -66,24 +63,24 @@ func (LicenseCollector) Scrape(ctx context.Context, db *sql.DB) {
 	var product_limit string
 	var expire_days int64
 
-	sqlRowsScanCtx, sqlRowsScanSpan := trace.StartSpan(ctx, "sql_row_scan")
-	sqlRowsScanSpan.Annotate([]trace.Attribute{trace.StringAttribute("step", "get the value from sql returns and update it to variables")}, "get the value from sql returns and update it to variables")
+	sqlRowsScanCtx, sqlRowsScanSpan := trace.StartSpan(ctx, "sql:row_scan")
+	sqlRowsScanSpan.Annotate([]trace.Attribute{trace.StringAttribute("step", "sql:row_scan")}, "get the value from sql returns and update it to variables")
 	err := licenseRow.Scan(&hardware_key, &system_id, &product_limit, &expire_days)
 	switch {
 	case err == sql.ErrNoRows:
 		log.Printf("No value returend")
-		sqlRowsScanSpan.Annotate([]trace.Attribute{}, "no rows returned")
+		sqlRowsScanSpan.Annotate([]trace.Attribute{}, "No value returend")
 
 	case err != nil:
-		log.Fatal(err)
+		log.Fatalf("Error when excute row scan to retrieve data, %v",err)
 		sqlRowsScanSpan.Annotate([]trace.Attribute{}, err.Error())
 
 	}
 
 	defer sqlRowsScanSpan.End()
 
-	measureSetCtx, measureSetCtxSpan := trace.StartSpan(sqlRowsScanCtx, "measure_value_set")
-	measureSetCtxSpan.Annotate([]trace.Attribute{trace.StringAttribute("step", "update_the_measurement")}, "use the variables to update the measurements")
+	measureSetCtx, measureSetCtxSpan := trace.StartSpan(sqlRowsScanCtx, "measure:set_value")
+	measureSetCtxSpan.Annotate([]trace.Attribute{trace.StringAttribute("step", "measure:set_value")}, "use the variables to update the measurements")
 	licensectx, err := tag.New(measureSetCtx,
 		tag.Insert(hardwareKeyTag, hardware_key),
 		tag.Insert(systemIdTag, system_id),

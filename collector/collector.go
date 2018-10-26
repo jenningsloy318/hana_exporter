@@ -12,19 +12,31 @@ import (
 	"time"
 )
 
-type ViewCollector interface {
-	// return collector name
-	CollectorName() string
+type HANACollector interface {
 	// return the views created by this collector
-	Views() []*view.View
+	NewViews() []*view.View
 	// real scrape
-	Scrape(ctx context.Context, db *sql.DB)
+	UpdateMeasurementData(ctx context.Context, db *sql.DB)
 }
 
-func Collect(ctx context.Context, dsn string, viewCollectors map[ViewCollector]bool) {
+var hanaCollectors = []HANACollector{
+	LicenseCollector{},
+	DisksCollector{},
+}
+var hanaViews []*view.View
 
-	sqlDriverRegCtx, sqlDriverRegSpan := trace.StartSpan(ctx, "sql_register_driver")
-	sqlDriverRegSpan.Annotate([]trace.Attribute{trace.StringAttribute("setp", "register_sql_driver")}, "Register the hana db driver into sql")
+func NewHanaViews() []*view.View {
+	for _, collector := range hanaCollectors {
+		hanaViews = append(hanaViews, collector.NewViews()...)
+	}
+	return hanaViews
+
+}
+
+func CollectMeasurement(ctx context.Context, dsn string) {
+
+	sqlDriverRegCtx, sqlDriverRegSpan := trace.StartSpan(ctx, "sql:register_driver")
+	sqlDriverRegSpan.Annotate([]trace.Attribute{trace.StringAttribute("setp", "sql:register_driver")}, "Register the hana db driver into sql")
 
 	driverName, err := ocsql.Register("hdb", ocsql.WithAllTraceOptions())
 
@@ -35,9 +47,9 @@ func Collect(ctx context.Context, dsn string, viewCollectors map[ViewCollector]b
 
 	sqlDriverRegSpan.End()
 
-	sqlOpenCtx, sqlOpenSpan := trace.StartSpan(sqlDriverRegCtx, "sql_open_db_conn")
-	sqlOpenSpan.AddAttributes(trace.StringAttribute("step", "sql_opendb_conn"))
-	sqlOpenSpan.Annotate([]trace.Attribute{trace.StringAttribute("setp", "sql_opendb_conn")}, "open sql connection to database")
+	sqlOpenCtx, sqlOpenSpan := trace.StartSpan(sqlDriverRegCtx, "sql:open_db_connnection")
+	sqlOpenSpan.AddAttributes(trace.StringAttribute("step", "sql:open_db_connnection"))
+	sqlOpenSpan.Annotate([]trace.Attribute{trace.StringAttribute("setp", "sql:open_db_connnection")}, "open sql connection to database")
 
 	db, err := sql.Open(driverName, dsn)
 
@@ -46,6 +58,16 @@ func Collect(ctx context.Context, dsn string, viewCollectors map[ViewCollector]b
 		sqlOpenSpan.Annotate([]trace.Attribute{}, err.Error())
 	}
 	sqlOpenSpan.End()
+
+	sqlQueryctx, sqlQuerySpan := trace.StartSpan(sqlOpenCtx, "sql:exution_entrance")
+	sqlQuerySpan.AddAttributes(trace.StringAttribute("step", "sql:exution_entrance"))
+	sqlQuerySpan.Annotate([]trace.Attribute{trace.StringAttribute("step", "sql:exution_entrance")}, "prepare to execute the sqls, here is the entry point")
+	defer sqlQuerySpan.End()
+
+	for _, hanaCollector := range hanaCollectors {
+			hanaCollector.UpdateMeasurementData(sqlQueryctx, db)
+	}
+
 	defer func() {
 		db.Close()
 		// Wait to 1 seconds so that the traces can be exported
@@ -54,15 +76,4 @@ func Collect(ctx context.Context, dsn string, viewCollectors map[ViewCollector]b
 		<-time.After(waitTime)
 	}()
 
-	sqlQueryctx, sqlQuerySpan := trace.StartSpan(sqlOpenCtx, "sql_queries")
-	sqlQuerySpan.AddAttributes(trace.StringAttribute("step", "sql_entry"))
-	sqlQuerySpan.Annotate([]trace.Attribute{trace.StringAttribute("step", "prepare_sql_execution")}, "prepare to execute the sqls, here is the entry point")
-	defer sqlQuerySpan.End()
-
-	//enabledCollectors := viewCollectors
-	//
-	for viewCollector := range viewCollectors {
-		viewCollector.Scrape(sqlQueryctx, db)
-
-	}
 }

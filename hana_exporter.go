@@ -95,22 +95,9 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("Failed to register http default server views for metrics: %v", err)
 	}
 
-	// configure enabled collectors
-	var viewCollectors = map[collector.ViewCollector]bool{
-		collector.DisksCollector{}:   true,
-		collector.LicenseCollector{}: true,
-	}
-	enabledCollectors := map[collector.ViewCollector]bool{}
-
-	// register views according to enabled collector
-	for viewCollector, flag := range viewCollectors {
-		if flag {
-			enabledCollectors[viewCollector] = flag
-			if err := view.Register(viewCollector.Views()...); err != nil {
-				log.Fatalf("Failed to register hana views for metrics: %v", err)
-			}
-
-		}
+	// register hana views 
+	if err := view.Register(collector.NewHanaViews()...); err != nil {
+		log.Fatalf("Failed to register hana views for metrics: %v", err)
 	}
 	// extract context and span from the http.request
 	reqCtx := r.Context()
@@ -131,14 +118,14 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// start strace and collect data
-	rootCtx, rootSpan := trace.StartSpan(reqCtx, "metrics_data_trace")
-	rootSpan.Annotate([]trace.Attribute{trace.StringAttribute("step", "start")}, "This is first span of the trace")
+	rootCtx, rootSpan := trace.StartSpan(reqCtx, "metrics:fetch_data")
+	rootSpan.Annotate([]trace.Attribute{trace.StringAttribute("step", "metrics:fetch_data")}, "This is first span of the trace")
 	stime := time.Now().String()
 	log.Printf("Starting to fectch data at %s", stime)
 	rootSpan.Annotate([]trace.Attribute{}, fmt.Sprintf("Starting to fectch data at %s.", stime))
 
 	defer rootSpan.End()
-	collector.Collect(rootCtx, dsn, enabledCollectors)
+	collector.CollectMeasurement(rootCtx, dsn)
 
 	view.SetReportingPeriod(1 * time.Second)
 	prometheusExporter.ServeHTTP(w, r)
