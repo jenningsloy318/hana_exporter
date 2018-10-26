@@ -4,14 +4,11 @@ import (
 	"database/sql"
 	_ "github.com/SAP/go-hdb/driver"
 	"go.opencensus.io/stats/view"
-	"go.opencensus.io/trace"
-	//	"go.opencensus.io/exporter/prometheus"
-	"context"
 	"log"
-	"time"
+	"sync"
 )
 
-type ViewCollector interface {
+type HANACollector interface {
 	// return collector name
 	CollectorName() string
 	// return the views created by this collector
@@ -20,24 +17,33 @@ type ViewCollector interface {
 	UpdateMeasurements(db *sql.DB)
 }
 
+var hanaCollectors = []HANACollector{LicenseCollector{},DisksCollector{}}
+var hanaViews []*view.View
+func NewHanaViews()  []*view.View {
 
-func NewHanaViews(dsn string)  []*view.View {
-	driverName, err := sql.Register("hdb")
-	if err != nil {
-		log.Fatalf("Failed to register the ocsql driver: %v", err)
+for _, collector := range hanaCollectors {
+	hanaViews=append(hanaViews,collector.NewViews()...)
+	
+}
+return hanaViews
 
-	}
-	db, err := sql.Open(driverName, dsn)
+}
 
+func NewHanaMeasurements(dsn string) {
+	db, err := sql.Open("hdb",dsn)
+	
 	if err != nil {
 		log.Fatalf("Failed to open the HANA database: %v", err)
 	}
-	var disksCollector = DisksCollector{}
-	var licenseCollector = LicenseCollector{}
- var HanaCollectors = []ViewCollector{licenseCollector,licenseCollector}
- var HanaViews []*view.View
-for collector = range HanaCollectors {
-	HanaViews=append(HanaViews,collector.NewViews(db))
+
+	wg := &sync.WaitGroup{}
+	defer wg.Wait()
+
+for _, collector := range hanaCollectors {
+	wg.Add(1)
+ go func(hanaCollector HANACollector ){
+	collector.UpdateMeasurements(db)
+ }(collector)
 }
 
 }

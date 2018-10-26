@@ -5,11 +5,9 @@ import (
 	_ "github.com/SAP/go-hdb/driver"
 	"github.com/jenningsloy318/hana_exporter/collector"
 	"github.com/jenningsloy318/hana_exporter/config"
-	"go.opencensus.io/exporter/jaeger"
 	"go.opencensus.io/exporter/prometheus"
 	"go.opencensus.io/plugin/ochttp"
 	"go.opencensus.io/stats/view"
-	"go.opencensus.io/trace"
 	"go.opencensus.io/zpages"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"html/template"
@@ -43,6 +41,7 @@ var (
 	commit    string
 	buildUser string
 	buildHost string
+	dsn string
 )
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
@@ -73,7 +72,7 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	user := targetCredentials.User
 	password := targetCredentials.Password
 
-	dsn := fmt.Sprintf("hdb://%s:%s@%s", user, password, target)
+	dsn = fmt.Sprintf("hdb://%s:%s@%s", user, password, target)
 
 	// create prometheus exporter
 
@@ -94,31 +93,12 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	if err := view.Register(ochttp.DefaultServerViews...); err != nil {
 		log.Fatalf("Failed to register http default server views for metrics: %v", err)
 	}
-
-	// configure enabled collectors
-	var viewCollectors = map[collector.ViewCollector]bool{
-		collector.DisksCollector{}:   true,
-		collector.LicenseCollector{}: true,
-	}
-	enabledCollectors := map[collector.ViewCollector]bool{}
-
+	hanaViews := collector.NewHanaViews() 
 	// register views according to enabled collector
-	for viewCollector, flag := range viewCollectors {
-		if flag {
-			enabledCollectors[viewCollector] = flag
-			if err := view.Register(viewCollector.Views()...); err != nil {
+			if err := view.Register(hanaViews...); err != nil {
 				log.Fatalf("Failed to register hana views for metrics: %v", err)
 			}
 
-		}
-	}
-	if err := view.Register(viewCollector.NewHanaViews(dsb)...); err != nil {
-		log.Fatalf("Failed to register hana views for metrics: %v", err)
-	}
-	
-	// extract context and span from the http.request
-	reqCtx := r.Context()
-	reqSpan := trace.FromContext(reqCtx)
 
 	// retrieve the remote client address and add it as attribute to the root span
 	IP, _, err := net.SplitHostPort(r.RemoteAddr)
@@ -129,21 +109,12 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	if clientIP == nil {
 		//return nil, fmt.Errorf("userip: %q is not IP:port", req.RemoteAddr)
 		fmt.Fprintf(w, "userip: %q is not IP:port", r.RemoteAddr)
-		reqSpan.AddAttributes(trace.StringAttribute("ProxyClient.IP", r.Header.Get("X-FORWARDED-FOR")))
 	} else {
-		reqSpan.AddAttributes(trace.StringAttribute("Client.IP", clientIP.String()))
 	}
 
-	// start strace and collect data
-	rootCtx, rootSpan := trace.StartSpan(reqCtx, "metrics_data_trace")
-	rootSpan.Annotate([]trace.Attribute{trace.StringAttribute("step", "start")}, "This is first span of the trace")
+	// start  collect data
 	stime := time.Now().String()
 	log.Printf("Starting to fectch data at %s", stime)
-	rootSpan.Annotate([]trace.Attribute{}, fmt.Sprintf("Starting to fectch data at %s.", stime))
-
-	defer rootSpan.End()
-	collector.Collect(rootCtx, dsn, enabledCollectors)
-
 	view.SetReportingPeriod(1 * time.Second)
 	prometheusExporter.ServeHTTP(w, r)
 
@@ -159,29 +130,13 @@ func main() {
 	if err := sc.ReloadConfig(*configFile); err != nil {
 		log.Fatalf("Error parsing config file: %s", err)
 	}
-	// create jaeger exporter
-	var jaegerConfig config.JaegerConfig
-	var err error
-	if jaegerConfig, err = sc.ParseJaegerConfig(); err != nil {
-		log.Fatalf("Error getting jarger config,%s", err)
-	}
 
-	JaegerExporter, err := jaeger.NewExporter(jaeger.Options{
-		AgentEndpoint: jaegerConfig.AgentEndpointURI,
-		Endpoint:      jaegerConfig.CollectorEndpointURI,
-		ServiceName:   "hana_exporter",
-	})
-	if err != nil {
-		log.Fatalf("Failed to create the Jaeger exporter: %v", err)
-	}
-	trace.RegisterExporter(JaegerExporter)
 
-	// apply trace config
-	trace.ApplyConfig(trace.Config{DefaultSampler: trace.AlwaysSample()})
-
-	// Ensure that the Prometheus endpoint is exposed for scraping
 
 	// http server mux
+
+	go collector.NewHanaMeasurements(dsn)
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
 		metricsHandler(w, r)

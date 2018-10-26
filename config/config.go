@@ -12,7 +12,6 @@ import (
 // Config is the Go representation of the yaml config file.
 type Config struct {
 	Credentials  map[string]Credentials `yaml:"Credentials"`
-	JaegerConfig JaegerConfig           `yaml:"Jaeger"`
 }
 
 // SafeConfig wraps Config for concurrency-safe operations.
@@ -26,11 +25,6 @@ type SafeConfig struct {
 type Credentials struct {
 	User     string `yaml:"user"`
 	Password string `yaml:"pass"`
-}
-
-type JaegerConfig struct {
-	AgentEndpointURI     string `yaml:"agentEndpointURI"`
-	CollectorEndpointURI string `yaml:"collectorEndpointURI"`
 }
 
 func (sc *SafeConfig) ReloadConfig(configFile string) error {
@@ -76,13 +70,3 @@ func (sc *SafeConfig) CredentialsForTarget(target string) (Credentials, error) {
 	return Credentials{}, fmt.Errorf("no credentials found for target %s", target)
 }
 
-func (sc *SafeConfig) ParseJaegerConfig() (JaegerConfig, error) {
-	sc.Lock()
-	defer sc.Unlock()
-	jaegerConfig := sc.C.JaegerConfig
-	return JaegerConfig{
-		AgentEndpointURI:     jaegerConfig.AgentEndpointURI,
-		CollectorEndpointURI: jaegerConfig.CollectorEndpointURI,
-	}, nil
-
-}

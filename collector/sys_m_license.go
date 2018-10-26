@@ -3,14 +3,13 @@
 package collector
 
 import (
-	"context"
 	"database/sql"
 	_ "github.com/SAP/go-hdb/driver"
 	"go.opencensus.io/stats"
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/tag"
-	"go.opencensus.io/trace"
 	"log"
+	"context"
 )
 
 const (
@@ -41,16 +40,15 @@ var (
 // ScrapeserviceStatistics collects from `sys.m_service_statistics`.
 type LicenseCollector struct{}
 
-func (LicenseCollector) CollectorName() string {
+func (licenseCollector LicenseCollector)CollectorName() string {
 	return "LicenseCollector"
 }
 
-func (LicenseCollector) NewViews(db *sql.DB) []*view.View {
-	LicenseCollector.UpdateMeasurements(db)
+func (licenseCollector LicenseCollector)NewViews() []*view.View {
 	return LicenseCollectorViews
 }
 
-func (LicenseCollector) UpdateMeasurements(db *sql.DB) {
+func (licenseCollector LicenseCollector)UpdateMeasurements(db *sql.DB) {
 
 	licenseRow := db.QueryRow(licenseStatusQuery)
 

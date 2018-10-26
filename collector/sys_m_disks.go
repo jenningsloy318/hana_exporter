@@ -2,14 +2,13 @@
 package collector
 
 import (
-	"context"
 	"database/sql"
 	_ "github.com/SAP/go-hdb/driver"
 	"go.opencensus.io/stats"
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/tag"
-	"go.opencensus.io/trace"
 	"log"
+	"context"
 )
 
 const (
@@ -49,16 +48,15 @@ var (
 	}
 )
 
-func (DisksCollector) CollectorName() string {
+func (disksCollector DisksCollector)CollectorName() string {
 	return "DisksCollector"
 }
 
-func (DisksCollector) NewViews(db *sql.DB) []*view.View {
-	DisksCollector.UpdateMeasurements(db)
+func (disksCollector DisksCollector)NewViews() []*view.View {
 	return DisksCollectorViews
 }
 
-func (DisksCollector) UpdateMeasurements( db *sql.DB) {
+func (disksCollector DisksCollector)UpdateMeasurements(db *sql.DB) {
 
 	disksRow := db.QueryRow(disksQuery)
 
@@ -76,7 +74,7 @@ func (DisksCollector) UpdateMeasurements( db *sql.DB) {
 		log.Fatal(err)
 	}
 
-	diskctx, err := tag.New(context.Backgroud(),
+	diskctx, err := tag.New(context.Background(),
 		tag.Insert(hostTag, host),
 		tag.Insert(pathTag, path),
 		tag.Insert(usageTypeTag, usage_type),

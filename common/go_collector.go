@@ -14,19 +14,16 @@
 package common
 
 import (
-	"fmt"
-	"runtime"
-	"runtime/debug"
-	"time"
-	"github.com/prometheus/client_golang/prometheus"
 	"context"
-	"database/sql"
-	_ "github.com/SAP/go-hdb/driver"
+	"fmt"
+	"github.com/prometheus/client_golang/prometheus"
 	"go.opencensus.io/stats"
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/tag"
-	"go.opencensus.io/trace"
 	"log"
+	"runtime"
+	"runtime/debug"
+	"time"
 )
 
 type goCollector struct {
@@ -46,76 +43,73 @@ type goCollector struct {
 // on the heap size and can be quite significant (~1.7 ms/GiB as per
 // https://go-review.googlesource.com/c/go/+/34937).
 
-
 var (
-goroutines_measure = stats.Float64("go_goroutines", "Number of goroutines that currently exist", stats.UnitDimensionless)
-threads_measure = stats.Float64("go_threads", "Number of OS threads created", stats.UnitDimensionless)
-gc_duration_measure = stats.Float64("go_gc_duration_ms", "A summary of the GC invocation durations.", stats.UnitMilliseconds)
-goInfo_measure = stats.Float64("go_info", "Information about the Go environment.", stats.UnitDimensionless)
-memStats_alloc_bytes_measure = stats.Float64("alloc_bytes", "Number of bytes allocated and still in use.", stats.UnitBytes)
-memStats_alloc_bytes_total_measure = stats.Float64("alloc_bytes_total", "Total number of bytes allocated, even if freed.", stats.UnitBytes)
-memStats_sys_bytes_measure =  stats.Float64("sys_bytes", "Number of bytes obtained from system.", stats.UnitBytes)
-memStats_lookups_total_measure = stats.Float64("lookups_total", "Total number of pointer lookups.", stats.UnitBytes)
-memStats_mallocs_total_measure = stats.Float64("mallocs_total", "Total number of mallocs.", stats.UnitBytes)
-memStats_frees_total_measure = stats.Float64("frees_total", "Total number of frees.", stats.UnitBytes)
-memStats_heap_alloc_bytes_measure = stats.Float64("heap_alloc_bytes", "Number of heap bytes allocated and still in use.", stats.UnitBytes)
-memStats_heap_sys_bytes_measure  = stats.Float64("heap_sys_bytes", "Number of heap bytes obtained from system.", stats.UnitBytes)
-memStats_heap_idle_bytes_measure = stats.Float64("heap_idle_bytes", "Number of heap bytes waiting to be used.", stats.UnitBytes)
-memStats_heap_inuse_bytes_measure = stats.Float64("heap_inuse_bytes", "Number of heap bytes that are in use.", stats.UnitBytes)
-memstat_heap_released_bytes_measure = stats.Float64("heap_released_bytes", "Number of heap bytes released to OS.", stats.UnitBytes)
-memstat_heap_objects_measure = stats.Float64("heap_objects", "Number of allocated objects.", stats.UnitBytes)
-memstat_stack_inuse_bytes_measure = stats.Float64("stack_inuse_bytes", "Number of bytes in use by the stack allocator.", stats.UnitBytes)
-memstat_stack_sys_bytes_measure = stats.Float64("stack_sys_bytes", "Number of bytes obtained from system for stack allocator.", stats.UnitBytes)
-memstat_mspan_inuse_bytes_measure = stats.Float64("mspan_inuse_bytes", "Number of bytes in use by mspan structures.", stats.UnitBytes)
-memstat_mspan_sys_bytes_measure = stats.Float64("mspan_sys_bytes", "Number of bytes used for mspan structures obtained from system.", stats.UnitBytes)
-memstat_mcache_inuse_bytes_measure = stats.Float64("mcache_inuse_bytes", "Number of bytes in use by mcache structures.", stats.UnitBytes)
-memstat_mcache_sys_bytes_measure = stats.Float64("mcache_sys_bytes", "Number of bytes used for mcache structures obtained from system.", stats.UnitBytes)
-memstat_buck_hash_sys_bytes_measure = stats.Float64("buck_hash_sys_bytes", "Number of bytes used by the profiling bucket hash table.", stats.UnitBytes)
-memstat_gc_sys_bytes_measure = stats.Float64("gc_sys_bytes", "Number of bytes used for garbage collection system metadata.", stats.UnitBytes)
-memstat_other_sys_bytes_measure = stats.Float64("other_sys_bytes", "Number of bytes used for other system allocations.", stats.UnitBytes)
-memstat_next_gc_bytes_measure = stats.Float64("next_gc_bytes", "Number of heap bytes when next garbage collection will take place.", stats.UnitBytes)
-memstat_last_gc_time_seconds_measure = stats.Float64("last_gc_time_seconds", "Number of seconds since 1970 of last garbage collection.", stats.UnitMilliseconds)
-memstat_gc_cpu_fraction_measure = stats.Float64("gc_cpu_fraction", "The fraction of this program's available CPU time used by the GC since the program started.", stats.UnitMilliseconds)
+	goroutines_measure                   = stats.Float64("go_goroutines", "Number of goroutines that currently exist", stats.UnitDimensionless)
+	threads_measure                      = stats.Float64("go_threads", "Number of OS threads created", stats.UnitDimensionless)
+	gc_duration_measure                  = stats.Float64("go_gc_duration_ms", "A summary of the GC invocation durations.", stats.UnitMilliseconds)
+	goInfo_measure                       = stats.Float64("go_info", "Information about the Go environment.", stats.UnitDimensionless)
+	memStats_alloc_bytes_measure         = stats.Float64("alloc_bytes", "Number of bytes allocated and still in use.", stats.UnitBytes)
+	memStats_alloc_bytes_total_measure   = stats.Float64("alloc_bytes_total", "Total number of bytes allocated, even if freed.", stats.UnitBytes)
+	memStats_sys_bytes_measure           = stats.Float64("sys_bytes", "Number of bytes obtained from system.", stats.UnitBytes)
+	memStats_lookups_total_measure       = stats.Float64("lookups_total", "Total number of pointer lookups.", stats.UnitBytes)
+	memStats_mallocs_total_measure       = stats.Float64("mallocs_total", "Total number of mallocs.", stats.UnitBytes)
+	memStats_frees_total_measure         = stats.Float64("frees_total", "Total number of frees.", stats.UnitBytes)
+	memStats_heap_alloc_bytes_measure    = stats.Float64("heap_alloc_bytes", "Number of heap bytes allocated and still in use.", stats.UnitBytes)
+	memStats_heap_sys_bytes_measure      = stats.Float64("heap_sys_bytes", "Number of heap bytes obtained from system.", stats.UnitBytes)
+	memStats_heap_idle_bytes_measure     = stats.Float64("heap_idle_bytes", "Number of heap bytes waiting to be used.", stats.UnitBytes)
+	memStats_heap_inuse_bytes_measure    = stats.Float64("heap_inuse_bytes", "Number of heap bytes that are in use.", stats.UnitBytes)
+	memstat_heap_released_bytes_measure  = stats.Float64("heap_released_bytes", "Number of heap bytes released to OS.", stats.UnitBytes)
+	memstat_heap_objects_measure         = stats.Float64("heap_objects", "Number of allocated objects.", stats.UnitBytes)
+	memstat_stack_inuse_bytes_measure    = stats.Float64("stack_inuse_bytes", "Number of bytes in use by the stack allocator.", stats.UnitBytes)
+	memstat_stack_sys_bytes_measure      = stats.Float64("stack_sys_bytes", "Number of bytes obtained from system for stack allocator.", stats.UnitBytes)
+	memstat_mspan_inuse_bytes_measure    = stats.Float64("mspan_inuse_bytes", "Number of bytes in use by mspan structures.", stats.UnitBytes)
+	memstat_mspan_sys_bytes_measure      = stats.Float64("mspan_sys_bytes", "Number of bytes used for mspan structures obtained from system.", stats.UnitBytes)
+	memstat_mcache_inuse_bytes_measure   = stats.Float64("mcache_inuse_bytes", "Number of bytes in use by mcache structures.", stats.UnitBytes)
+	memstat_mcache_sys_bytes_measure     = stats.Float64("mcache_sys_bytes", "Number of bytes used for mcache structures obtained from system.", stats.UnitBytes)
+	memstat_buck_hash_sys_bytes_measure  = stats.Float64("buck_hash_sys_bytes", "Number of bytes used by the profiling bucket hash table.", stats.UnitBytes)
+	memstat_gc_sys_bytes_measure         = stats.Float64("gc_sys_bytes", "Number of bytes used for garbage collection system metadata.", stats.UnitBytes)
+	memstat_other_sys_bytes_measure      = stats.Float64("other_sys_bytes", "Number of bytes used for other system allocations.", stats.UnitBytes)
+	memstat_next_gc_bytes_measure        = stats.Float64("next_gc_bytes", "Number of heap bytes when next garbage collection will take place.", stats.UnitBytes)
+	memstat_last_gc_time_seconds_measure = stats.Float64("last_gc_time_seconds", "Number of seconds since 1970 of last garbage collection.", stats.UnitMilliseconds)
+	memstat_gc_cpu_fraction_measure      = stats.Float64("gc_cpu_fraction", "The fraction of this program's available CPU time used by the GC since the program started.", stats.UnitMilliseconds)
 
-goInfoVersionTag, _   = tag.NewKey("version")
+	goInfoVersionTag, _ = tag.NewKey("version")
 
-GoroutinesView = &view.View{
-	Name:        "go_goroutines",
-	Description: "Number of goroutines that currently exist",
-	TagKeys:     []tag.Key{},
-	Measure:     goroutines_measure,
-	Aggregation: view.LastValue(),
-}
-ThreadsView= &view.View{
-	Name:        "go_threads",
-	Description: "Number of OS threads created",
-	TagKeys:     []tag.Key{},
-	Measure:     threads_measure,
-	Aggregation: view.LastValue(),
-}
-GcDurationView = &view.View{
-	Name:        "go_gc_duration_seconds",
-	Description: "A summary of the GC invocation durations",
-	TagKeys:     []tag.Key{},
-	Measure:     gc_duration_measure,
-	Aggregation: view.LastValue(),
-}
-gGoInfoView = &view.View{
-	Name:        "go_info",
-	Description: "Information about the Go environment",
-	TagKeys:     []tag.Key{goInfoVersionTag},
-	Measure:     goInfo_measure,
-	Aggregation: view.LastValue(),
-}
+	GoroutinesView = &view.View{
+		Name:        "go_goroutines",
+		Description: "Number of goroutines that currently exist",
+		TagKeys:     []tag.Key{},
+		Measure:     goroutines_measure,
+		Aggregation: view.LastValue(),
+	}
+	ThreadsView = &view.View{
+		Name:        "go_threads",
+		Description: "Number of OS threads created",
+		TagKeys:     []tag.Key{},
+		Measure:     threads_measure,
+		Aggregation: view.LastValue(),
+	}
+	GcDurationView = &view.View{
+		Name:        "go_gc_duration_seconds",
+		Description: "A summary of the GC invocation durations",
+		TagKeys:     []tag.Key{},
+		Measure:     gc_duration_measure,
+		Aggregation: view.LastValue(),
+	}
+	gGoInfoView = &view.View{
+		Name:        "go_info",
+		Description: "Information about the Go environment",
+		TagKeys:     []tag.Key{goInfoVersionTag},
+		Measure:     goInfo_measure,
+		Aggregation: view.LastValue(),
+	}
 
-
-GoCollectorViews = *view.View{
-	GoroutinesView,
-	ThreadsView,
-	GcDurationView,
-	gGoInfoView,
-
-}
+	GoCollectorViews = *view.View{
+		GoroutinesView,
+		ThreadsView,
+		GcDurationView,
+		gGoInfoView,
+	}
 )
 
 type Go_collector struct{}
@@ -131,37 +125,34 @@ func (Go_collector) Views() []*view.View {
 
 func (LicenseCollector) Scrape(ctx context.Context) {
 
-// get goroutines 
-stats.Record(ctx, goroutines_measure.M(float64(runtime.NumGoroutine())))
+	// get goroutines
+	stats.Record(ctx, goroutines_measure.M(float64(runtime.NumGoroutine())))
 
-// get threads
-threads_num, _ := runtime.ThreadCreateProfile(nil)
-stats.Record(ctx, threads_measure.M(float64(threads_num)))
+	// get threads
+	threads_num, _ := runtime.ThreadCreateProfile(nil)
+	stats.Record(ctx, threads_measure.M(float64(threads_num)))
 
+	// get gc duration
+	var gcstats debug.GCStats
+	gcstats.PauseQuantiles = make([]time.Duration, 5)
+	debug.ReadGCStats(&gcstats)
 
-// get gc duration 
-var gcstats debug.GCStats
-gcstats.PauseQuantiles = make([]time.Duration, 5)
-debug.ReadGCStats(&gcstats)
+	quantiles := make(map[float64]float64)
+	for idx, pq := range gcstats.PauseQuantiles[1:] {
+		quantiles[float64(idx+1)/float64(len(stats.PauseQuantiles)-1)] = pq.Seconds()
+	}
+	quantiles[0.0] = gcstats.PauseQuantiles[0].Seconds()
 
-quantiles := make(map[float64]float64)
-for idx, pq := range gcstats.PauseQuantiles[1:] {
-	quantiles[float64(idx+1)/float64(len(stats.PauseQuantiles)-1)] = pq.Seconds()
+	gc_duration := gcstats.PauseTotal.Seconds()
+	stats.Record(ctx, gc_duration_measure.M(float64(gc_duration)))
+
+	// get goInfo
+	goinfoctx, err := tag.New(ctx,
+		tag.Insert(goInfoVersionTag, runtime.Version()),
+	)
+	stats.Record(goinfoctx, gc_duration_measure.M(float64(gc_duration)))
+
 }
-quantiles[0.0] = gcstats.PauseQuantiles[0].Seconds()
-
-gc_duration := gcstats.PauseTotal.Seconds()
-stats.Record(ctx, gc_duration_measure.M(float64(gc_duration)))
-
-// get goInfo 
-goinfoctx, err := tag.New(ctx,
-	tag.Insert(goInfoVersionTag, runtime.Version()),
-)
-stats.Record(goinfoctx, gc_duration_measure.M(float64(gc_duration)))
-
-}
-
-
 
 func NewGoCollector() Collector {
 	return &goCollector{
