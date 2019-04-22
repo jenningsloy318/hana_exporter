@@ -18,6 +18,13 @@ credentials:
         user: "SYSTEM"
         pass: "Password"
 ```
+
+Note: This user should have role `SAP_INTERNAL_HANA_SUPPORT` to access schema `SYS`, Without the `SAP_INTERNAL_HANA_SUPPORT` role, this information can be selected only by the `SYSTEM` user.
+
+```sql
+grant  SAP_INTERNAL_HANA_SUPPORT  to user
+```
+
 then start hana-exporter via 
 ```sh
 hana_exporter --config.file=hana_exporter.yml
