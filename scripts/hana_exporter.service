@@ -2,7 +2,7 @@
 Description=hana exporter  service
 
 [Service]
-ExecStart=/usr/bin/hana_exporter --config.file=/etc/hana_exporter/hana_exporter.yml 
+ExecStart=/usr/bin/hana_exporter --config.file=/etc/prometheus/hana_exporter.yml 
 Restart=always
 RestartSec=2s
 StartLimitInterval=0

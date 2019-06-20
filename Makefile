@@ -7,6 +7,7 @@ PROMU        := $(FIRST_GOPATH)/bin/promu
 STATICCHECK  := $(FIRST_GOPATH)/bin/staticcheck
 GOVENDOR     := $(FIRST_GOPATH)/bin/govendor
 GODEP				 := $(FIRST_GOPATH)/bin/dep
+RPM          := ./scripts/build_rpm.sh
 pkgs          = ./...
 
 BIN_DIR                 ?= $(shell pwd)/build
@@ -59,6 +60,10 @@ unused:
 build: | $(PROMU)
 	@echo ">> building binaries"
 	$(PROMU) build 
+
+buildrpm: | build
+	@echo ">> building binaries"
+	$(RPM) build
 
 deps:  | $(GODEP)
 	@echo ">> update the dependencies"
