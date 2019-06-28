@@ -171,7 +171,7 @@ func main() {
 	}()
 
 	http.Handle("/metrics", promhttp.Handler())
-	http.HandleFunc(*metricPath, prometheus.InstrumentHandlerFunc("metrics", newHandler(enabledScrapers)))
+	http.HandleFunc(*metricPath, newHandler(enabledScrapers))
 	http.HandleFunc("/-/reload", updateConfiguration) // reload config
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write(landingPage)
