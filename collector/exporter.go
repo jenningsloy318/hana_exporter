@@ -43,12 +43,12 @@ type Exporter struct {
 
 // split string, use @ as delimiter to split the dsn to get hana instance
 
-func stringsplit(s rune) bool {
-	if s == '@' {
-		return true
-	}
-	return false
-}
+//func stringsplit(s rune) bool {
+//	if s == '@' {
+//		return true
+//	}
+//	return false
+//}
 
 // New returns a new HANA exporter for the provided DSN.
 func New(dsn string, scrapers []Scraper) *Exporter {
@@ -173,40 +173,40 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 func parseStatus(data sql.RawBytes) (float64, bool) {
 
 	// sys_m_service_statistics
-	if bytes.Compare(data, []byte("YES")) == 0 {
+	if bytes.Equal(data, []byte("YES")) {
 		return 1, true
 	}
-	if bytes.Compare(data, []byte("NO")) == 0 {
+	if bytes.Equal(data, []byte("NO")) {
 		return 0, true
 	}
-	if bytes.Compare(data, []byte("UNKNOWN")) == 0 {
+	if bytes.Equal(data, []byte("UNKNOWN")) {
 		return 2, true
 	}
-	if bytes.Compare(data, []byte("STARTING")) == 0 {
+	if bytes.Equal(data, []byte("STARTING")) {
 		return 3, true
 	}
-	if bytes.Compare(data, []byte("STOPPING")) == 0 {
+	if bytes.Equal(data, []byte("STOPPING")) {
 		return 4, true
 	}
 
 	// sys_m_service_replication
 
-	if bytes.Compare(data, []byte("TRUE")) == 0 {
+	if bytes.Equal(data, []byte("TRUE")) {
 		return 1, true
 	}
-	if bytes.Compare(data, []byte("FALSE")) == 0 {
+	if bytes.Equal(data, []byte("FALSE")) {
 		return 0, true
 	}
-	if bytes.Compare(data, []byte("ACTIVE")) == 0 {
+	if bytes.Equal(data, []byte("ACTIVE")) {
 		return 1, true
 	}
-	if bytes.Compare(data, []byte("ERROR")) == 0 {
+	if bytes.Equal(data, []byte("ERROR")) {
 		return 0, true
 	}
-	if bytes.Compare(data, []byte("INITIALIZING")) == 0 {
+	if bytes.Equal(data, []byte("INITIALIZING")) {
 		return 3, true
 	}
-	if bytes.Compare(data, []byte("SYNCING")) == 0 {
+	if bytes.Equal(data, []byte("SYNCING")) {
 		return 4, true
 	}
 	value, err := strconv.ParseFloat(string(data), 64)
