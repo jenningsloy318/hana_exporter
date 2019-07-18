@@ -61,7 +61,7 @@ build: | $(PROMU)
 	@echo ">> building binaries"
 	$(PROMU) build 
 
-buildrpm: | build
+rpm: | build
 	@echo ">> building binaries"
 	$(RPM) build
 
@@ -76,9 +76,6 @@ tarball:  |  build
 fmt:
 	@echo ">> format code style"
 	$(GOFMT) -w $$(find . -path ./vendor -prune -o -name '*.go' -print) 
-
-package:| $(PROMU) build
-	./scripts/package-rpm-deb.sh  
 
 
 
