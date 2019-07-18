@@ -2,12 +2,13 @@ package collector
 
 import (
 	"database/sql"
+
 	_ "github.com/SAP/go-hdb/driver"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-// Scraper is minimal interface that let's you add new prometheus metrics to mysqld_exporter.
+// Scraper is minimal interface that let's you add new prometheus metrics to hana_exporter.
 type Scraper interface {
 	// Name of the Scraper. Should be unique.
 	Name() string
