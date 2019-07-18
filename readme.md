@@ -76,6 +76,14 @@ make package-release
 ```
 
 then you package can be found in `./build`
+
+
+# Roadmap
+
+also need to implement following metrics:
+- metrics about user, user count, expired user, be expiring user, locked user 
+- implement more metrics that configured in the hana studio  
+
 # Parameter Explanation
 
  - --collect.sys_m_service_statistics, the metric hana_sys_m_service_statistics_status value and status mapping as following table:
