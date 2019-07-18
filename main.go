@@ -2,6 +2,11 @@ package main
 
 import (
 	"fmt"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/jenningsloy318/hana_exporter/collector"
 	"github.com/jenningsloy318/hana_exporter/config"
 	"github.com/prometheus/client_golang/prometheus"
@@ -9,10 +14,6 @@ import (
 	"github.com/prometheus/common/log"
 	"github.com/prometheus/common/version"
 	"gopkg.in/alecthomas/kingpin.v2"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 // define  flag
@@ -65,11 +66,11 @@ func newHandler(scrapers []collector.Scraper) http.HandlerFunc {
 		user := targetCredentials.User
 		password := targetCredentials.Password
 		// construct dsn
-		dsn = fmt.Sprintf("hdb://%s:%s@%s", user, password, target)
+		//dsn = fmt.Sprintf("hdb://%s:%s@%s", user, password, target)
 
 		registry := prometheus.NewRegistry()
 
-		collector := collector.New(dsn, scrapers)
+		collector := collector.New(target, user, password, scrapers)
 		registry.MustRegister(collector)
 
 		gatherers := prometheus.Gatherers{

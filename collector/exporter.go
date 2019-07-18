@@ -3,12 +3,14 @@ package collector
 import (
 	"bytes"
 	"database/sql"
-	_ "github.com/SAP/go-hdb/driver"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/common/log"
+	"fmt"
 	"strconv"
 	"sync"
 	"time"
+
+	_ "github.com/SAP/go-hdb/driver"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/common/log"
 )
 
 // Metric name parts.
@@ -24,10 +26,17 @@ const (
 
 // Metric descriptors.
 var (
+	BaseLabelNames     = []string{"hana_instance"}
+	BaseLabelValues    = make([]string, 1, 1)
 	scrapeDurationDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, exporter, "collector_duration_seconds"),
 		"Collector time duration.",
 		[]string{"collector"}, nil,
+	)
+	hanaUpDesc = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "up"),
+		"Collector time duration.",
+		BaseLabelNames, nil,
 	)
 )
 
@@ -38,7 +47,6 @@ type Exporter struct {
 	error        prometheus.Gauge
 	totalScrapes prometheus.Counter
 	scrapeErrors *prometheus.CounterVec
-	hanaUp       prometheus.Gauge
 }
 
 // split string, use @ as delimiter to split the dsn to get hana instance
@@ -51,10 +59,10 @@ type Exporter struct {
 //}
 
 // New returns a new HANA exporter for the provided DSN.
-func New(dsn string, scrapers []Scraper) *Exporter {
-
+func New(host string, user string, password string, scrapers []Scraper) *Exporter {
+	BaseLabelValues[0] = host
 	return &Exporter{
-		dsn:      dsn,
+		dsn:      fmt.Sprintf("hdb://%s:%s@%s", user, password, host),
 		scrapers: scrapers,
 		totalScrapes: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: namespace,
@@ -73,12 +81,6 @@ func New(dsn string, scrapers []Scraper) *Exporter {
 			Subsystem: exporter,
 			Name:      "last_scrape_error",
 			Help:      "Whether the last scrape of metrics from HANA resulted in an error (1 for error, 0 for success).",
-		}),
-
-		hanaUp: prometheus.NewGauge(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Name:      "up",
-			Help:      "Whether the HANA server is up.",
 		}),
 	}
 }
@@ -118,7 +120,6 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 
 	ch <- e.totalScrapes
 	ch <- e.error
-	ch <- e.hanaUp
 	e.scrapeErrors.Collect(ch)
 }
 
@@ -143,13 +144,14 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 	isUpRows, err := db.Query(upQuery)
 	if err != nil {
 		log.Errorln("Error pinging hana:", err)
-		e.hanaUp.Set(0)
+		ch <- prometheus.MustNewConstMetric(hanaUpDesc, prometheus.GaugeValue, 0, BaseLabelValues...)
 		e.error.Set(1)
 		return
 	}
 	isUpRows.Close()
 
-	e.hanaUp.Set(1)
+	ch <- prometheus.MustNewConstMetric(hanaUpDesc, prometheus.GaugeValue, 1, BaseLabelValues...)
+
 	ch <- prometheus.MustNewConstMetric(scrapeDurationDesc, prometheus.GaugeValue, time.Since(scrapeTime).Seconds(), "connection")
 
 	wg := &sync.WaitGroup{}
