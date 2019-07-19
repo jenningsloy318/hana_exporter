@@ -19,14 +19,15 @@ const (
 
 // Metric descriptors.
 var (
+	hostResourceUtilizationLabels = append(BaseLabelNames,"host",)
 	hostResourceUtilizationUsedPhysicalMemorydesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, hostResourceUtilization, "used_physical_memory_bytes"),
 		"Used physical memory on the host (bytes) from sys.m_host_resource_utilization.",
-		[]string{"host"}, nil)
+		hostResourceUtilizationLabels, nil)
 	hostResourceUtilizationFreePhysicalMemorydesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, hostResourceUtilization, "free_physical_memory_bytes"),
 		"Free physical memory on the host(bytes) from sys.m_host_resource_utilization.",
-		[]string{"host"}, nil)
+		hostResourceUtilizationLabels, nil)
 )
 
 // ScrapeHostResourceUtilization collects from `SYS.M_HOST_RESOURCE_UTILIZATION`.
@@ -57,9 +58,9 @@ func (ScrapeHostResourceUtilization) Scrape(db *sql.DB, ch chan<- prometheus.Met
 		if err := hostResourceUtilizationRows.Scan(&host, &used_physical_memory, &free_physical_memory); err != nil {
 			return err
 		}
-
-		ch <- prometheus.MustNewConstMetric(hostResourceUtilizationUsedPhysicalMemorydesc, prometheus.GaugeValue, used_physical_memory, host)
-		ch <- prometheus.MustNewConstMetric(hostResourceUtilizationFreePhysicalMemorydesc, prometheus.GaugeValue, free_physical_memory, host)
+		hostResourceUtilizationLabelValues :=append(BaseLabelValues,host)
+		ch <- prometheus.MustNewConstMetric(hostResourceUtilizationUsedPhysicalMemorydesc, prometheus.GaugeValue, used_physical_memory, hostResourceUtilizationLabelValues...)
+		ch <- prometheus.MustNewConstMetric(hostResourceUtilizationFreePhysicalMemorydesc, prometheus.GaugeValue, free_physical_memory, hostResourceUtilizationLabelValues...)
 
 	}
 	return nil

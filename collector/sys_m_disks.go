@@ -18,14 +18,15 @@ const (
 
 // Metric descriptors.
 var (
+	disksLabels = append(BaseLabelNames,"host", "path", "usage_type")
 	disksTotalSizeDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, disks, "total_size"),
 		"Volume Size.",
-		[]string{"host", "path", "usage_type"}, nil)
+		disksLabels, nil)
 	disksUsedSizeDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, disks, "used_size"),
 		"Volume Used Space.",
-		[]string{"host", "path", "usage_type"}, nil)
+		disksLabels, nil)
 )
 
 // Scrapedisks collects from `SYS.M_DISKS;`.
@@ -59,8 +60,10 @@ func (ScrapeDisks) Scrape(db *sql.DB, ch chan<- prometheus.Metric) error {
 		if err := disksRows.Scan(&host, &path, &usage_type, &total_size, &used_size); err != nil {
 			return err
 		}
-		ch <- prometheus.MustNewConstMetric(disksTotalSizeDesc, prometheus.GaugeValue, total_size, host, path, usage_type)
-		ch <- prometheus.MustNewConstMetric(disksUsedSizeDesc, prometheus.GaugeValue, used_size, host, path, usage_type)
+		disksLabelValues :=append(BaseLabelValues,host, path, usage_type)
+
+		ch <- prometheus.MustNewConstMetric(disksTotalSizeDesc, prometheus.GaugeValue, total_size, disksLabelValues...)
+		ch <- prometheus.MustNewConstMetric(disksUsedSizeDesc, prometheus.GaugeValue, used_size, disksLabelValues...)
 
 	}
 	return nil

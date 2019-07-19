@@ -211,6 +211,28 @@ func parseStatus(data sql.RawBytes) (float64, bool) {
 	if bytes.Equal(data, []byte("SYNCING")) {
 		return 4, true
 	}
+
+
+
+	//default transform  to float64
 	value, err := strconv.ParseFloat(string(data), 64)
 	return value, err == nil
+}
+
+
+func parseConfigString(data string) (float64, bool) {
+// log_mode
+if bytes.Equal([]byte(data), []byte("overwrite")) {
+	return 1, true
+}
+
+if bytes.Equal([]byte(data), []byte("normal")) {
+	return 0, true
+}
+
+
+	//default transform from string to float64
+	value, err := strconv.ParseFloat(data, 64)
+	return value, err == nil
+
 }

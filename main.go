@@ -43,6 +43,7 @@ var scrapers = map[collector.Scraper]bool{
 	collector.ScrapeSharedMemory{}:            true,
 	collector.ScrapeCsTables{}:                true,
 	collector.ScrapeServiceReplication{}:      true,
+	collector.ScrapeSystemConfig{}:                 true,
 }
 
 func init() {

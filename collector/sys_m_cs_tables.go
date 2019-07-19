@@ -18,26 +18,27 @@ const (
 
 // Metric descriptors.
 var (
+	csTablesLabels = append(BaseLabelNames, "host", "port", "schema_name", "table_name", "part_id")
 	csTablesMemorySizeInTotalDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, csTables, "memory_size_in_total"),
 		"Allocated shared memory size on the module.",
-		[]string{"host", "port", "schema_name", "table_name", "part_id"}, nil)
+		csTablesLabels, nil)
 	csTablesRecordCountDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, csTables, "record_count"),
 		"Used shared memory size on the module.",
-		[]string{"host", "port", "schema_name", "table_name", "part_id"}, nil)
+		csTablesLabels, nil)
 	csTablesReadCountDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, csTables, "read_count"),
 		"Used shared memory size on the module.",
-		[]string{"host", "port", "schema_name", "table_name", "part_id"}, nil)
+		csTablesLabels, nil)
 	csTablesWriteCountDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, csTables, "write_count"),
 		"Used shared memory size on the module.",
-		[]string{"host", "port", "schema_name", "table_name", "part_id"}, nil)
+		csTablesLabels, nil)
 	csTablesMergeCountDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, csTables, "merge_count"),
 		"Used shared memory size on the module.",
-		[]string{"host", "port", "schema_name", "table_name", "part_id"}, nil)
+		csTablesLabels, nil)
 )
 
 // Scrapedisks collects from `SYS.M_CS_TABLES;`.
@@ -76,11 +77,12 @@ func (ScrapeCsTables) Scrape(db *sql.DB, ch chan<- prometheus.Metric) error {
 		if err := csTablesRows.Scan(&host, &port, &schema_name, &table_name, &part_id, &memory_size_in_total, &record_count, &read_count, &write_count, &merge_count); err != nil {
 			return err
 		}
-		ch <- prometheus.MustNewConstMetric(csTablesMemorySizeInTotalDesc, prometheus.GaugeValue, memory_size_in_total, host, port, schema_name, table_name, part_id)
-		ch <- prometheus.MustNewConstMetric(csTablesRecordCountDesc, prometheus.GaugeValue, record_count, host, port, schema_name, table_name, part_id)
-		ch <- prometheus.MustNewConstMetric(csTablesReadCountDesc, prometheus.GaugeValue, read_count, host, port, schema_name, table_name, part_id)
-		ch <- prometheus.MustNewConstMetric(csTablesWriteCountDesc, prometheus.GaugeValue, write_count, host, port, schema_name, table_name, part_id)
-		ch <- prometheus.MustNewConstMetric(csTablesMergeCountDesc, prometheus.GaugeValue, merge_count, host, port, schema_name, table_name, part_id)
+		csTablesLabelValues :=append(BaseLabelValues,host, port, schema_name, table_name, part_id)
+		ch <- prometheus.MustNewConstMetric(csTablesMemorySizeInTotalDesc, prometheus.GaugeValue, memory_size_in_total, csTablesLabelValues...)
+		ch <- prometheus.MustNewConstMetric(csTablesRecordCountDesc, prometheus.GaugeValue, record_count, csTablesLabelValues...)
+		ch <- prometheus.MustNewConstMetric(csTablesReadCountDesc, prometheus.GaugeValue, read_count, csTablesLabelValues...)
+		ch <- prometheus.MustNewConstMetric(csTablesWriteCountDesc, prometheus.GaugeValue, write_count, csTablesLabelValues...)
+		ch <- prometheus.MustNewConstMetric(csTablesMergeCountDesc, prometheus.GaugeValue, merge_count, csTablesLabelValues...)
 
 	}
 	return nil
