@@ -18,7 +18,7 @@ const (
 
 // Metric descriptors.
 var (
-	sharedMemoryLabels =append(BaseLabelNames,"host", "port", "category")
+	sharedMemoryLabels =[]string{"host", "port", "category"}
 	sharedMemoryAllocatedSizeDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, sharedMemory, "allocated_size"),
 		"Allocated shared memory size on the module.",
@@ -65,7 +65,7 @@ func (ScrapeSharedMemory) Scrape(db *sql.DB, ch chan<- prometheus.Metric) error 
 		if err := sharedMemoryRows.Scan(&host, &port, &category, &allocated_size, &used_size, &free_size); err != nil {
 			return err
 		}
-		sharedMemoryLabelValues :=append(BaseLabelValues,host, port, category)
+		sharedMemoryLabelValues :=[]string{host, port, category}
 
 		ch <- prometheus.MustNewConstMetric(sharedMemoryAllocatedSizeDesc, prometheus.GaugeValue, allocated_size, sharedMemoryLabelValues...)
 		ch <- prometheus.MustNewConstMetric(sharedMemoryUsedSizeDesc, prometheus.GaugeValue, used_size, sharedMemoryLabelValues...)

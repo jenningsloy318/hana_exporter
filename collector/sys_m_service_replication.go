@@ -18,7 +18,7 @@ const (
 
 // Metric descriptors.
 var (
-	serviceReplicationLabels = append(BaseLabelNames,"host", "port", "volume_id", "secondary_host", "secondary_port",)
+	serviceReplicationLabels = []string{"host", "port", "volume_id", "secondary_host", "secondary_port",}
 	serviceReplicationSecondaryActiveStatusDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, serviceReplication, "secondary_active_status"),
 		"Secondary Active Status.",
@@ -69,7 +69,7 @@ func (ScrapeServiceReplication) Scrape(db *sql.DB, ch chan<- prometheus.Metric) 
 			return err
 
 		}
-		serviceReplicationLabelValues :=append(BaseLabelValues,host, port, volume_id, secondary_host, secondary_port)
+		serviceReplicationLabelValues :=[]string{host, port, volume_id, secondary_host, secondary_port}
 		if secondary_active_statusVal, ok := parseStatus(secondary_active_status); ok {
 			ch <- prometheus.MustNewConstMetric(serviceReplicationSecondaryActiveStatusDesc, prometheus.GaugeValue, secondary_active_statusVal,serviceReplicationLabelValues... )
 		}

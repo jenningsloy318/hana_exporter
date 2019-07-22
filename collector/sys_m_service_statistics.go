@@ -18,7 +18,7 @@ const (
 
 // Metric descriptors.
 var (
-	serviceStatisticsLabels =append(BaseLabelNames,"service_name", "service_status", "host", "port")
+	serviceStatisticsLabels =[]string{"service_name", "service_status", "host", "port"}
 
 	serviceStatisticsActiveStatusDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, serviceStatistics, "status"),
@@ -122,7 +122,7 @@ func (ScrapeServiceStatistics) Scrape(db *sql.DB, ch chan<- prometheus.Metric) e
 			return err
 		}
 
-		serviceStatisticsLabelValues :=append(BaseLabelValues,service_name,string(active_status), host, port)
+		serviceStatisticsLabelValues :=[]string{service_name,string(active_status), host, port}
 
 		if active_statusVal, ok := parseStatus(active_status); ok {
 			ch <- prometheus.MustNewConstMetric(serviceStatisticsActiveStatusDesc, prometheus.GaugeValue, active_statusVal, serviceStatisticsLabelValues...)

@@ -18,7 +18,7 @@ const (
 
 // Metric descriptors.
 var (
-	licenseStatusLabels = append(BaseLabelNames,"hardware_key", "system_id", "product_limit",)
+	licenseStatusLabels = []string{"hardware_key", "system_id", "product_limit",}
 	licenseStatusDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, licenseStatus, "expire_days"),
 		"License expire days from sys.m_service_statistics.",
@@ -55,7 +55,7 @@ func (ScrapeLicenseStatus) Scrape(db *sql.DB, ch chan<- prometheus.Metric) error
 		if err := licenseStatusRows.Scan(&hardware_key, &system_id, &product_limit, &expire_days); err != nil {
 			return err
 		}
-		licenseStatusLabelValues :=append(BaseLabelValues,hardware_key, system_id, product_limit)
+		licenseStatusLabelValues :=[]string{hardware_key, system_id, product_limit}
 		ch <- prometheus.MustNewConstMetric(licenseStatusDesc, prometheus.GaugeValue, expire_days, licenseStatusLabelValues...)
 
 	}
