@@ -26,8 +26,8 @@ const (
 
 // Metric descriptors.
 var (
-	BaseLabelNames     = []string{"hana_instance"}
-	BaseLabelValues    = make([]string, 1, 1)
+//	BaseLabelNames     = []string{"hana_instance"}
+//	BaseLabelValues    = make([]string, 1, 1)
 	scrapeDurationDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, exporter, "collector_duration_seconds"),
 		"Collector time duration.",
@@ -36,7 +36,7 @@ var (
 	hanaUpDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "up"),
 		"Collector time duration.",
-		BaseLabelNames, nil,
+		nil, nil,
 	)
 )
 
@@ -60,7 +60,7 @@ type Exporter struct {
 
 // New returns a new HANA exporter for the provided DSN.
 func New(host string, user string, password string, scrapers []Scraper) *Exporter {
-	BaseLabelValues[0] = host
+//	BaseLabelValues[0] = host
 	return &Exporter{
 		dsn:      fmt.Sprintf("hdb://%s:%s@%s", user, password, host),
 		scrapers: scrapers,
@@ -144,13 +144,13 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 	isUpRows, err := db.Query(upQuery)
 	if err != nil {
 		log.Errorln("Error pinging hana:", err)
-		ch <- prometheus.MustNewConstMetric(hanaUpDesc, prometheus.GaugeValue, 0, BaseLabelValues...)
+		ch <- prometheus.MustNewConstMetric(hanaUpDesc, prometheus.GaugeValue, 0, )
 		e.error.Set(1)
 		return
 	}
 	isUpRows.Close()
 
-	ch <- prometheus.MustNewConstMetric(hanaUpDesc, prometheus.GaugeValue, 1, BaseLabelValues...)
+	ch <- prometheus.MustNewConstMetric(hanaUpDesc, prometheus.GaugeValue, 1, )
 
 	ch <- prometheus.MustNewConstMetric(scrapeDurationDesc, prometheus.GaugeValue, time.Since(scrapeTime).Seconds(), "connection")
 
