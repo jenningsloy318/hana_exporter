@@ -2,10 +2,9 @@
 
 this is initial hana exporter to monitor hana database.
 
-gather all hana info from its system table/views, following the description at 
+gather all hana info from its system table/views, all table/veiw under `SYS` schema with `M_` as prefix are monitoring tables/views. so we just fetch data from `SYS.M_*` tables/views.
 
-http://sap.optimieren.de/hana/hana/html/sys_statistics_views.html
-
+ 
 the exporter itself metrics exposed at `/metrics`, and the hana database metrics exposed at `/hana`
 # Usage 
 create a configuration `hana.yml`, which contains the credentials of hana instance.
