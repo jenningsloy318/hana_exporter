@@ -18,7 +18,7 @@ const (
 
 // Metric descriptors.
 var (
-	disksLabels = []string{"host", "path", "usage_type"}
+	disksLabels        = []string{"host", "path", "usage_type"}
 	disksTotalSizeDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, disks, "total_size"),
 		"Volume Size.",
@@ -60,7 +60,7 @@ func (ScrapeDisks) Scrape(db *sql.DB, ch chan<- prometheus.Metric) error {
 		if err := disksRows.Scan(&host, &path, &usage_type, &total_size, &used_size); err != nil {
 			return err
 		}
-		disksLabelValues :=[]string{host, path, usage_type}
+		disksLabelValues := []string{host, path, usage_type}
 
 		ch <- prometheus.MustNewConstMetric(disksTotalSizeDesc, prometheus.GaugeValue, total_size, disksLabelValues...)
 		ch <- prometheus.MustNewConstMetric(disksUsedSizeDesc, prometheus.GaugeValue, used_size, disksLabelValues...)

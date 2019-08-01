@@ -55,10 +55,10 @@ func (ScrapeSystemConfig) Scrape(db *sql.DB, ch chan<- prometheus.Metric) error 
 			return err
 		} else if log_mode.Valid {
 			if log_mode_value, ok := parseConfigString(log_mode.String); ok {
-				ch <- prometheus.MustNewConstMetric(logModeSystemDesc, prometheus.GaugeValue, log_mode_value, )
+				ch <- prometheus.MustNewConstMetric(logModeSystemDesc, prometheus.GaugeValue, log_mode_value)
 			}
 		} else {
-			ch <- prometheus.MustNewConstMetric(logModeSystemDesc, prometheus.GaugeValue, 0, )
+			ch <- prometheus.MustNewConstMetric(logModeSystemDesc, prometheus.GaugeValue, 0)
 		}
 	}
 

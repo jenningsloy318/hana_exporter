@@ -18,7 +18,7 @@ const (
 
 // Metric descriptors.
 var (
-	csTablesLabels = []string{"host", "port", "schema_name", "table_name", "part_id"}
+	csTablesLabels                = []string{"host", "port", "schema_name", "table_name", "part_id"}
 	csTablesMemorySizeInTotalDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, csTables, "memory_size_in_total"),
 		"Allocated shared memory size on the module.",
@@ -77,7 +77,7 @@ func (ScrapeCsTables) Scrape(db *sql.DB, ch chan<- prometheus.Metric) error {
 		if err := csTablesRows.Scan(&host, &port, &schema_name, &table_name, &part_id, &memory_size_in_total, &record_count, &read_count, &write_count, &merge_count); err != nil {
 			return err
 		}
-		csTablesLabelValues :=[]string{host, port, schema_name, table_name, part_id}
+		csTablesLabelValues := []string{host, port, schema_name, table_name, part_id}
 		ch <- prometheus.MustNewConstMetric(csTablesMemorySizeInTotalDesc, prometheus.GaugeValue, memory_size_in_total, csTablesLabelValues...)
 		ch <- prometheus.MustNewConstMetric(csTablesRecordCountDesc, prometheus.GaugeValue, record_count, csTablesLabelValues...)
 		ch <- prometheus.MustNewConstMetric(csTablesReadCountDesc, prometheus.GaugeValue, read_count, csTablesLabelValues...)

@@ -21,14 +21,14 @@ const (
 
 // SQL Queries.
 const (
-	upQuery = `select 1 from dummy;`
+	upQuery = `select  SYSTEM_ID AS SID, DATABASE_NAME AS DB_NAME,Version from "SYS"."M_DATABASE";`
 )
 
 // Metric descriptors.
 var (
-//	BaseLabelNames     = []string{"hana_instance"}
-//	BaseLabelValues    = make([]string, 1, 1)
-	scrapeDurationDesc = prometheus.NewDesc(
+	HanaInfoLabelNames  = []string{"sid", "db_name", "db_version"}
+	HanaInfoLabelValues = make([]string, 3, 3)
+	scrapeDurationDesc  = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, exporter, "collector_duration_seconds"),
 		"Collector time duration.",
 		[]string{"collector"}, nil,
@@ -37,6 +37,11 @@ var (
 		prometheus.BuildFQName(namespace, "", "up"),
 		"Collector time duration.",
 		nil, nil,
+	)
+	hanaInfoDesc = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "", "info"),
+		"Collector time duration.",
+		HanaInfoLabelNames, nil,
 	)
 )
 
@@ -60,7 +65,7 @@ type Exporter struct {
 
 // New returns a new HANA exporter for the provided DSN.
 func New(host string, user string, password string, scrapers []Scraper) *Exporter {
-//	BaseLabelValues[0] = host
+	//	BaseLabelValues[0] = host
 	return &Exporter{
 		dsn:      fmt.Sprintf("hdb://%s:%s@%s", user, password, host),
 		scrapers: scrapers,
@@ -144,13 +149,25 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) {
 	isUpRows, err := db.Query(upQuery)
 	if err != nil {
 		log.Errorln("Error pinging hana:", err)
-		ch <- prometheus.MustNewConstMetric(hanaUpDesc, prometheus.GaugeValue, 0, )
+		ch <- prometheus.MustNewConstMetric(hanaUpDesc, prometheus.GaugeValue, 0)
 		e.error.Set(1)
 		return
+	} else {
+		ch <- prometheus.MustNewConstMetric(hanaUpDesc, prometheus.GaugeValue, 1)
+		var sid string
+		var db_name string
+		var db_version string
+		for isUpRows.Next() {
+			if err := isUpRows.Scan(&sid, &db_name, &db_version); err != nil {
+				return 
+			}
+		}
+		HanaInfoLabelValues = []string{sid, db_name, db_version}
+
+		ch <- prometheus.MustNewConstMetric(hanaInfoDesc, prometheus.GaugeValue, 1, HanaInfoLabelValues...)
+
 	}
 	isUpRows.Close()
-
-	ch <- prometheus.MustNewConstMetric(hanaUpDesc, prometheus.GaugeValue, 1, )
 
 	ch <- prometheus.MustNewConstMetric(scrapeDurationDesc, prometheus.GaugeValue, time.Since(scrapeTime).Seconds(), "connection")
 
@@ -212,24 +229,20 @@ func parseStatus(data sql.RawBytes) (float64, bool) {
 		return 4, true
 	}
 
-
-
 	//default transform  to float64
 	value, err := strconv.ParseFloat(string(data), 64)
 	return value, err == nil
 }
 
-
 func parseConfigString(data string) (float64, bool) {
-// log_mode
-if bytes.Equal([]byte(data), []byte("overwrite")) {
-	return 1, true
-}
+	// log_mode
+	if bytes.Equal([]byte(data), []byte("overwrite")) {
+		return 1, true
+	}
 
-if bytes.Equal([]byte(data), []byte("normal")) {
-	return 0, true
-}
-
+	if bytes.Equal([]byte(data), []byte("normal")) {
+		return 0, true
+	}
 
 	//default transform from string to float64
 	value, err := strconv.ParseFloat(data, 64)
