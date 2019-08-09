@@ -47,6 +47,7 @@ var scrapers = map[collector.Scraper]bool{
 	collector.ScrapeSystemReplication{}:       true,
 	collector.ScrapeCsUnloads{}:		           true,
 	collector.ScrapeCsLoads{}:		           true,
+	collector.ScrapeRsTables{}:							 true,
 }
 
 func init() {

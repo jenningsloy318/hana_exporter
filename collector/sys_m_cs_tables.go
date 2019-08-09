@@ -11,7 +11,7 @@ import (
 
 const (
 	// Scrape query.
-	csTablesQuery = `SELECT HOST,PORT,SCHEMA_NAME,TABLE_NAME,PART_ID,MEMORY_SIZE_IN_TOTAL,RECORD_COUNT,READ_COUNT,WRITE_COUNT,MERGE_COUNT FROM SYS.M_CS_TABLES WHERE SCHEMA_NAME != '_SYS_STATISTICS'  ORDER BY MEMORY_SIZE_IN_TOTAL DESC LIMIT 10;`
+	csTablesQuery = `SELECT TOP 5  HOST,PORT,SCHEMA_NAME,TABLE_NAME,PART_ID,MEMORY_SIZE_IN_TOTAL,RECORD_COUNT,READ_COUNT,WRITE_COUNT,MERGE_COUNT  FROM SYS.M_CS_TABLES   WHERE SCHEMA_NAME NOT LIKE 'SYS%'  AND SCHEMA_NAME NOT LIKE '_SYS%' AND SCHEMA_NAME NOT LIKE 'HANA%' AND  SCHEMA_NAME NOT LIKE 'UI%'   ORDER BY MEMORY_SIZE_IN_TOTAL DESC ;`
 	// Subsystem.
 	csTables = "sys_m_cs_tables"
 )
@@ -21,23 +21,23 @@ var (
 	csTablesLabels                = []string{"host", "port", "schema_name", "table_name", "part_id"}
 	csTablesMemorySizeInTotalDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, csTables, "memory_size_in_total"),
-		"Allocated shared memory size on the module.",
+		"total shared memory size of this table,Byte.",
 		csTablesLabels, nil)
 	csTablesRecordCountDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, csTables, "record_count"),
-		"Used shared memory size on the module.",
+		"Record count of this table or partition.",
 		csTablesLabels, nil)
 	csTablesReadCountDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, csTables, "read_count"),
-		"Used shared memory size on the module.",
+		"Number of read accesses on the table or partition.",
 		csTablesLabels, nil)
 	csTablesWriteCountDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, csTables, "write_count"),
-		"Used shared memory size on the module.",
+		"Number of write accesses on the table or partition.",
 		csTablesLabels, nil)
 	csTablesMergeCountDesc = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, csTables, "merge_count"),
-		"Used shared memory size on the module.",
+		"Number of delta merges	done on the table or partition.",
 		csTablesLabels, nil)
 )
 
