@@ -81,10 +81,6 @@ then you package can be found in `./build`
 
 also need to implement following metrics:
 - metrics about user, user count, expired user, be expiring user, locked user  from "SYS"."USERS"
-- system replication  from "SYS"."M_SYSTEM_REPLICATION"
-- xs connections from "SYS"."M_XS_SESSIONS" 
-- current connections `SELECT *   FROM "SYS"."M_CONNECTIONS" where CLIENT_IP != '' and CONNECTION_TYPE = 'Remote' AND CONNECTION_STATUS = 'RUNNING' ;`
-- column store loads and unloads `SELECT COUNT(*),SCHEMA_NAME FROM "SYS"."M_CS_UNLOADS" GROUP BY SCHEMA_NAME ORDER BY COUNT(*) DESC ` and `SELECT COUNT(*),SCHEMA_NAME  FROM "SYS"."M_CS_LOADS"   GROUP BY SCHEMA_NAME  ORDER BY COUNT(*) DESC `
 # Parameter Explanation
 
  - --collect.sys_m_service_statistics, the metric hana_sys_m_service_statistics_status value and status mapping as following table:
