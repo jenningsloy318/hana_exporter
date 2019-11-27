@@ -11,7 +11,7 @@ import (
 
 // Config is the Go representation of the yaml config file.
 type Config struct {
-	Credentials map[string]Credentials `yaml:"credentials"`
+	Databases map[string]DatabaseConfig `yaml:"databases"`
 }
 
 // SafeConfig wraps Config for concurrency-safe operations.
@@ -22,7 +22,7 @@ type SafeConfig struct {
 
 // Credentials is the Go representation of the credentials section in the yaml
 // config file.
-type Credentials struct {
+type DatabaseConfig struct {
 	User     string `yaml:"user"`
 	Password string `yaml:"pass"`
 }
@@ -51,20 +51,20 @@ func (sc *SafeConfig) ReloadConfig(configFile string) error {
 
 // CredentialsForTarget returns the Credentials for a given target, or the
 // default. It is concurrency-safe.
-func (sc *SafeConfig) CredentialsForTarget(target string) (Credentials, error) {
+func (sc *SafeConfig) DatabaseConfigForTarget(target string) (DatabaseConfig, error) {
 	sc.Lock()
 	defer sc.Unlock()
-	if credentials, ok := sc.C.Credentials[target]; ok {
-		return Credentials{
-			User:     credentials.User,
-			Password: credentials.Password,
+	if databaseConfig, ok := sc.C.Databases[target]; ok {
+		return DatabaseConfig{
+			User:     databaseConfig.User,
+			Password: databaseConfig.Password,
 		}, nil
 	}
-	if credentials, ok := sc.C.Credentials["default"]; ok {
-		return Credentials{
-			User:     credentials.User,
-			Password: credentials.Password,
+	if databaseConfig, ok := sc.C.Databases["default"]; ok {
+		return DatabaseConfig{
+			User:     databaseConfig.User,
+			Password: databaseConfig.Password,
 		}, nil
 	}
-	return Credentials{}, fmt.Errorf("no credentials found for target %s", target)
+	return DatabaseConfig{}, fmt.Errorf("no credentials found for target %s", target)
 }

@@ -9,7 +9,7 @@ the exporter itself metrics exposed at `/metrics`, and the hana database metrics
 # Usage 
 create a configuration `hana.yml`, which contains the credentials of hana instance.
 ```yaml
-credentials:
+databases:
     default:
         user: "user"
         pass: "password"

@@ -1,4 +1,4 @@
-credentials:
+databases:
     default:
         user: "user"
         pass: "password"

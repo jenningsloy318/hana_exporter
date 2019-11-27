@@ -57,7 +57,7 @@ unused:
 	@echo ">> running check for unused packages"
 	@$(GOVENDOR) list +unused | grep . && exit 1 || echo 'No unused packages'
 
-build: | $(PROMU)
+build: |
 	@echo ">> building binaries"
 	$(PROMU) build 
 

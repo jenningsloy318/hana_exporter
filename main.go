@@ -45,9 +45,9 @@ var scrapers = map[collector.Scraper]bool{
 	collector.ScrapeServiceReplication{}:      true,
 	collector.ScrapeSystemConfig{}:            true,
 	collector.ScrapeSystemReplication{}:       true,
-	collector.ScrapeCsUnloads{}:		           true,
-	collector.ScrapeCsLoads{}:		           true,
-	collector.ScrapeRsTables{}:							 true,
+	collector.ScrapeCsUnloads{}:               true,
+	collector.ScrapeCsLoads{}:                 true,
+	collector.ScrapeRsTables{}:                true,
 }
 
 func init() {
@@ -63,19 +63,15 @@ func newHandler(scrapers []collector.Scraper) http.HandlerFunc {
 			return
 		}
 		log.Debugf("Scraping target '%s'", target)
-		var targetCredentials config.Credentials
+		var databaseConfig config.DatabaseConfig
 		var err error
-		if targetCredentials, err = sc.CredentialsForTarget(target); err != nil {
+		if databaseConfig, err = sc.DatabaseConfigForTarget(target); err != nil {
 			log.Fatalf("Error getting credentialfor target %s file: %s", target, err)
 		}
-		user := targetCredentials.User
-		password := targetCredentials.Password
-		// construct dsn
-		//dsn = fmt.Sprintf("hdb://%s:%s@%s", user, password, target)
 
 		registry := prometheus.NewRegistry()
 
-		collector := collector.New(target, user, password, scrapers)
+		collector := collector.New(target, databaseConfig.User, databaseConfig.Password, scrapers)
 		registry.MustRegister(collector)
 
 		gatherers := prometheus.Gatherers{
@@ -85,20 +81,6 @@ func newHandler(scrapers []collector.Scraper) http.HandlerFunc {
 		// Delegate http serving to Prometheus client library, which will call collector.Collect.
 		h := promhttp.HandlerFor(gatherers, promhttp.HandlerOpts{})
 		h.ServeHTTP(w, r)
-	}
-}
-
-func updateConfiguration(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case "POST":
-		rc := make(chan error)
-		reloadCh <- rc
-		if err := <-rc; err != nil {
-			http.Error(w, fmt.Sprintf("failed to reload config: %s", err), http.StatusInternalServerError)
-		}
-	default:
-		log.Errorf("POST method expected")
-		http.Error(w, "POST method expected", 400)
 	}
 }
 
@@ -178,7 +160,6 @@ func main() {
 
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc(*metricPath, newHandler(enabledScrapers))
-	http.HandleFunc("/-/reload", updateConfiguration) // reload config
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write(landingPage)
 	})
