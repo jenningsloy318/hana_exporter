@@ -66,7 +66,8 @@ func newHandler(scrapers []collector.Scraper) http.HandlerFunc {
 		var databaseConfig config.DatabaseConfig
 		var err error
 		if databaseConfig, err = sc.DatabaseConfigForTarget(target); err != nil {
-			log.Fatalf("Error getting credentialfor target %s file: %s", target, err)
+			log.Errorf("Error getting credentialfor target %s file: %s", target, err)
+			return
 		}
 
 		registry := prometheus.NewRegistry()
